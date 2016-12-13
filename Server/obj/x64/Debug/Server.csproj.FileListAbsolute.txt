@@ -1,0 +1,6 @@
+E:\Documents\Dropbox\uni\multi\CPPDummyServer\C#\Server\Server\bin\x64\Debug\Server.exe.config
+E:\Documents\Dropbox\uni\multi\CPPDummyServer\C#\Server\Server\bin\x64\Debug\Server.exe
+E:\Documents\Dropbox\uni\multi\CPPDummyServer\C#\Server\Server\bin\x64\Debug\Server.pdb
+E:\Documents\Dropbox\uni\multi\CPPDummyServer\C#\Server\Server\obj\x64\Debug\Server.exe
+E:\Documents\Dropbox\uni\multi\CPPDummyServer\C#\Server\Server\obj\x64\Debug\Server.pdb
+E:\Documents\Dropbox\uni\multi\CPPDummyServer\C#\Server\Server\obj\x64\Debug\Server.csprojResolveAssemblyReference.cache

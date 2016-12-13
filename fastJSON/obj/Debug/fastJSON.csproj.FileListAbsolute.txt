@@ -1,0 +1,10 @@
+E:\ExternalDevTools\c#\fastJSON_v2.1.21\output\net40\fastJSON.dll
+E:\ExternalDevTools\c#\fastJSON_v2.1.21\output\net40\fastJSON.pdb
+E:\ExternalDevTools\c#\fastJSON_v2.1.21\fastJSON\obj\Debug\fastJSON.csprojResolveAssemblyReference.cache
+E:\ExternalDevTools\c#\fastJSON_v2.1.21\fastJSON\obj\Debug\fastJSON.dll
+E:\ExternalDevTools\c#\fastJSON_v2.1.21\fastJSON\obj\Debug\fastJSON.pdb
+E:\Documents\Dropbox\uni\multi\CPPDummyServer\C#\Server\output\net40\fastJSON.dll
+E:\Documents\Dropbox\uni\multi\CPPDummyServer\C#\Server\output\net40\fastJSON.pdb
+E:\Documents\Dropbox\uni\multi\CPPDummyServer\C#\Server\fastJSON\obj\Debug\fastJSON.csprojResolveAssemblyReference.cache
+E:\Documents\Dropbox\uni\multi\CPPDummyServer\C#\Server\fastJSON\obj\Debug\fastJSON.dll
+E:\Documents\Dropbox\uni\multi\CPPDummyServer\C#\Server\fastJSON\obj\Debug\fastJSON.pdb

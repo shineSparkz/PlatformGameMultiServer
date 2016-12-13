@@ -1,0 +1,10 @@
+E:\Documents\Dropbox\uni\multi\CPPDummyServer\C#\Server\Server\bin\x86\Debug\Server.exe.config
+E:\Documents\Dropbox\uni\multi\CPPDummyServer\C#\Server\Server\bin\x86\Debug\Server.exe
+E:\Documents\Dropbox\uni\multi\CPPDummyServer\C#\Server\Server\bin\x86\Debug\Server.pdb
+E:\Documents\Dropbox\uni\multi\CPPDummyServer\C#\Server\Server\obj\x86\Debug\Server.exe
+E:\Documents\Dropbox\uni\multi\CPPDummyServer\C#\Server\Server\obj\x86\Debug\Server.pdb
+E:\Documents\Dropbox\uni\multi\CPPDummyServer\C#\Server\Server\bin\x86\Debug\Microsoft.Xna.Framework.dll
+E:\Documents\Dropbox\uni\multi\CPPDummyServer\C#\Server\Server\bin\x86\Debug\Microsoft.Xna.Framework.xml
+E:\Documents\Dropbox\uni\multi\CPPDummyServer\C#\Server\Server\obj\x86\Debug\Server.csprojResolveAssemblyReference.cache
+E:\Documents\Dropbox\uni\multi\CPPDummyServer\C#\Server\Server\bin\x86\Debug\fastJSON.dll
+E:\Documents\Dropbox\uni\multi\CPPDummyServer\C#\Server\Server\bin\x86\Debug\fastJSON.pdb

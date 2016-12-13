@@ -1,0 +1,18 @@
+E:\Documents\uni\year_3\multiplayer\CPPDummyServer\C#\Server\Server\bin\Debug\Server.exe.config
+E:\Documents\uni\year_3\multiplayer\CPPDummyServer\C#\Server\Server\bin\Debug\Server.exe
+E:\Documents\uni\year_3\multiplayer\CPPDummyServer\C#\Server\Server\bin\Debug\Server.pdb
+E:\Documents\uni\year_3\multiplayer\CPPDummyServer\C#\Server\Server\obj\Debug\Server.csprojResolveAssemblyReference.cache
+E:\Documents\uni\year_3\multiplayer\CPPDummyServer\C#\Server\Server\obj\Debug\Server.exe
+E:\Documents\uni\year_3\multiplayer\CPPDummyServer\C#\Server\Server\obj\Debug\Server.pdb
+C:\Users\Alex Desktop\Google Drive\uni_year_3\multiplayer\CPPDummyServer\C#\Server\Server\bin\Debug\Server.exe.config
+C:\Users\Alex Desktop\Google Drive\uni_year_3\multiplayer\CPPDummyServer\C#\Server\Server\obj\Debug\Server.exe
+C:\Users\Alex Desktop\Google Drive\uni_year_3\multiplayer\CPPDummyServer\C#\Server\Server\obj\Debug\Server.pdb
+C:\Users\Alex Desktop\Google Drive\uni_year_3\multiplayer\CPPDummyServer\C#\Server\Server\bin\Debug\Server.exe
+C:\Users\Alex Desktop\Google Drive\uni_year_3\multiplayer\CPPDummyServer\C#\Server\Server\bin\Debug\Server.pdb
+C:\Users\Alex Desktop\Google Drive\uni_year_3\multiplayer\CPPDummyServer\C#\Server\Server\obj\Debug\Server.csprojResolveAssemblyReference.cache
+E:\Documents\Dropbox\uni\multi\CPPDummyServer\C#\Server\Server\bin\Debug\Server.exe.config
+E:\Documents\Dropbox\uni\multi\CPPDummyServer\C#\Server\Server\obj\Debug\Server.exe
+E:\Documents\Dropbox\uni\multi\CPPDummyServer\C#\Server\Server\obj\Debug\Server.pdb
+E:\Documents\Dropbox\uni\multi\CPPDummyServer\C#\Server\Server\bin\Debug\Server.exe
+E:\Documents\Dropbox\uni\multi\CPPDummyServer\C#\Server\Server\bin\Debug\Server.pdb
+E:\Documents\Dropbox\uni\multi\CPPDummyServer\C#\Server\Server\obj\Debug\Server.csprojResolveAssemblyReference.cache
