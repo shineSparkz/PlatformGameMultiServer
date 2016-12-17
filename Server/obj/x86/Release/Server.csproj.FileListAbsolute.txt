@@ -8,3 +8,6 @@ E:\Documents\Dropbox\uni\multi\CPPDummyServer\C#\Server\Server\bin\x86\Release\f
 E:\Documents\Dropbox\uni\multi\CPPDummyServer\C#\Server\Server\bin\x86\Release\Microsoft.Xna.Framework.dll
 E:\Documents\Dropbox\uni\multi\CPPDummyServer\C#\Server\Server\bin\x86\Release\fastJSON.pdb
 E:\Documents\Dropbox\uni\multi\CPPDummyServer\C#\Server\Server\bin\x86\Release\Microsoft.Xna.Framework.xml
+C:\DocumentsC\university\year3\multi\DemonGame\PlatformGameMultiServer\Server\bin\x86\Release\Server.exe.config
+C:\DocumentsC\university\year3\multi\DemonGame\PlatformGameMultiServer\Server\obj\x86\Release\Server.exe
+C:\DocumentsC\university\year3\multi\DemonGame\PlatformGameMultiServer\Server\obj\x86\Release\Server.pdb

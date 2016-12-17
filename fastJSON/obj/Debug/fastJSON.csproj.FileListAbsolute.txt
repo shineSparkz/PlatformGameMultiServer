@@ -8,3 +8,8 @@ E:\Documents\Dropbox\uni\multi\CPPDummyServer\C#\Server\output\net40\fastJSON.pd
 E:\Documents\Dropbox\uni\multi\CPPDummyServer\C#\Server\fastJSON\obj\Debug\fastJSON.csprojResolveAssemblyReference.cache
 E:\Documents\Dropbox\uni\multi\CPPDummyServer\C#\Server\fastJSON\obj\Debug\fastJSON.dll
 E:\Documents\Dropbox\uni\multi\CPPDummyServer\C#\Server\fastJSON\obj\Debug\fastJSON.pdb
+C:\DocumentsC\university\year3\multi\DemonGame\PlatformGameMultiServer\output\net40\fastJSON.dll
+C:\DocumentsC\university\year3\multi\DemonGame\PlatformGameMultiServer\output\net40\fastJSON.pdb
+C:\DocumentsC\university\year3\multi\DemonGame\PlatformGameMultiServer\fastJSON\obj\Debug\fastJSON.csprojResolveAssemblyReference.cache
+C:\DocumentsC\university\year3\multi\DemonGame\PlatformGameMultiServer\fastJSON\obj\Debug\fastJSON.dll
+C:\DocumentsC\university\year3\multi\DemonGame\PlatformGameMultiServer\fastJSON\obj\Debug\fastJSON.pdb

@@ -4,3 +4,11 @@ E:\Documents\Dropbox\uni\multi\CPPDummyServer\C#\Server\Server\bin\x64\Debug\Ser
 E:\Documents\Dropbox\uni\multi\CPPDummyServer\C#\Server\Server\obj\x64\Debug\Server.exe
 E:\Documents\Dropbox\uni\multi\CPPDummyServer\C#\Server\Server\obj\x64\Debug\Server.pdb
 E:\Documents\Dropbox\uni\multi\CPPDummyServer\C#\Server\Server\obj\x64\Debug\Server.csprojResolveAssemblyReference.cache
+C:\DocumentsC\university\year3\multi\DemonGame\PlatformGameMultiServer\Server\bin\x64\Debug\Server.exe.config
+C:\DocumentsC\university\year3\multi\DemonGame\PlatformGameMultiServer\Server\obj\x64\Debug\Server.exe
+C:\DocumentsC\university\year3\multi\DemonGame\PlatformGameMultiServer\Server\obj\x64\Debug\Server.pdb
+C:\DocumentsC\university\year3\multi\DemonGame\PlatformGameMultiServer\Server\bin\x64\Debug\Server.exe
+C:\DocumentsC\university\year3\multi\DemonGame\PlatformGameMultiServer\Server\bin\x64\Debug\Server.pdb
+C:\DocumentsC\university\year3\multi\DemonGame\PlatformGameMultiServer\Server\bin\x64\Debug\fastJSON.dll
+C:\DocumentsC\university\year3\multi\DemonGame\PlatformGameMultiServer\Server\bin\x64\Debug\fastJSON.pdb
+C:\DocumentsC\university\year3\multi\DemonGame\PlatformGameMultiServer\Server\obj\x64\Debug\Server.csprojResolveAssemblyReference.cache

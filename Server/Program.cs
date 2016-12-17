@@ -19,7 +19,6 @@ using Server.GameSpecific;
 namespace Server
 {
 
-
 	#region [   data objects   ]
 
 	[Serializable]
@@ -47,9 +46,22 @@ namespace Server
 	}
 	#endregion
 
+    /*
+        TODO
+        - JSON proto
+        - SQL data
+        - Store clients in database
+        - Security
+        - Persisitance, say for exp or something
+        - Separate starting a game and connecting
+        - Hashing messages id's rather than strings
+        - The idea of server knowing which level to load
+        - Update game state on server (like physics)
+    */
+
 	class Program
 	{
-		// Move this
+		// Collision stuff - Move this
 		const int iterations = 3;
 		const int UP = 0;
 		const int DOWN = 1;
@@ -82,7 +94,6 @@ namespace Server
 
 			static void SetLevelData(int levelNumber)
 			{
-
 				for (int i = 1; i < 12; ++i)
 				{
 					GameObjects.Add(new GameObject(new Vector2(i * 64, 450), GameObjectType.Wall, GameObjects.Count));
@@ -123,7 +134,6 @@ namespace Server
 				// ---- Set up tcp socket ----
 				Socket listener = (Socket)ar.AsyncState;
 				Socket localTcp = listener.EndAccept(ar);
-				//Console.WriteLine("Client Connected to TCP socket");
 
 				// ---- Generate a state object to pass around Async calls ----
 				TcpStateObject tcpStateObj = new TcpStateObject();
@@ -197,8 +207,6 @@ namespace Server
 					tcpStateObj								// Object
 				);
 
-				//Console.WriteLine("Listening for UDP messages");
-
 				// ----  The client knows this local udp port, so if/when we get a message from them on this, we can add their end
 				//		 point to the client hash table and connect a local udp Socket to that end point which is also stored and
 				//		 completes the data structure for this client
@@ -224,15 +232,14 @@ namespace Server
 					Console.WriteLine("Exception handled :  {0}", e.Message);
 				}
 
-				Console.WriteLine("Got TCP Msg");
+#if DEBUG
+                Console.WriteLine("Got TCP Msg");
+#endif
 
 				if (bytesRead > 0)
 				{
 					// Parse
 					state.strBldr.Append(Encoding.ASCII.GetString(state.buffer, 0, bytesRead));
-
-					// TODO: Parse, send all for now
-					//SendAllTcp(state.strBldr.ToString());
 					
 					// Clear
 					state.buffer = new byte[ServerDefs.BUFF_SIZE];
@@ -251,7 +258,7 @@ namespace Server
 				else
 				{
 					// Shut down
-					Console.WriteLine("Removing clients and closing sockets");
+					Console.WriteLine("Removing client and closing sockets");
 					Console.WriteLine(string.Format("Number of clients: {0}", m_Clients.Count));
 
 					tcp_socket.Close();
@@ -287,7 +294,7 @@ namespace Server
 
 			public static void UdpInitialReadCallback(IAsyncResult ar)
 			{
-				Console.WriteLine("Got clients first udp message..... attemping to bind sockets");
+                Console.WriteLine("Got clients first udp message..... attemping to bind sockets");
 
 				UdpStateObject listenstate = (UdpStateObject)(ar.AsyncState);
 				UdpClient udplistener = listenstate.udpSocket;
@@ -334,9 +341,11 @@ namespace Server
 
 			public static void UdpReadCallback(IAsyncResult ar)
 			{
-				Console.WriteLine("Got Udp");
+#if DEBUG
+                Console.WriteLine("Got Udp");
+#endif
 
-				UdpStateObject listenstate = (UdpStateObject)(ar.AsyncState);
+                UdpStateObject listenstate = (UdpStateObject)(ar.AsyncState);
 				UdpClient udplistener = listenstate.udpSocket;
 				IPEndPoint remoteEndpoint = listenstate.endPoint;
 
@@ -349,6 +358,7 @@ namespace Server
 				{
 					string type = spl_str[0];
 
+                    // TODO : Need a hash here
 					if (type == "input")
 					{
 						int key =       Convert.ToInt32(spl_str[1]);
@@ -474,9 +484,6 @@ namespace Server
 					}
 				}
 
-				// Echo for now
-				//SendAllUdp(receiveString);
-
 				// Loop around
 				udplistener.BeginReceive(new AsyncCallback(UdpReadCallback), listenstate);
 			}
@@ -484,7 +491,7 @@ namespace Server
 			public static void UdpSendCallback(IAsyncResult ar)
 			{
 				UdpClient uc = (UdpClient)ar.AsyncState;
-				Console.WriteLine("UDP number of bytes sent: {0}", uc.EndSend(ar));
+                uc.EndSend(ar); // returns int of bytes sent
 			}
 
 			public static void TcpSendCallBack(IAsyncResult ar)
@@ -503,9 +510,6 @@ namespace Server
 			static void SendUdp(UdpClient client, string message)
 			{
 				Byte[] sendBytes = Encoding.ASCII.GetBytes(message);
-
-				// send the message
-				// the destination is defined by the call to .Connect()
 				client.BeginSend(sendBytes, sendBytes.Length,
 							new AsyncCallback(UdpSendCallback), client);
 			}
