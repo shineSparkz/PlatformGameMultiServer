@@ -105,8 +105,10 @@ namespace Server
 
 			public static void StartListeningForNewClients()
 			{
-				IPEndPoint addr = new IPEndPoint(IPAddress.Any, ServerDefs.TCP_LISTEN_PORT);
-				Socket listener = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+                string localIp = GetLocalIPAddress();
+                IPEndPoint addr = new IPEndPoint(IPAddress.Parse(localIp), ServerDefs.TCP_LISTEN_PORT);
+
+                Socket listener = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
 				Console.WriteLine("Server started.... waiting for connections from new clients");
 
 				try
@@ -150,7 +152,7 @@ namespace Server
 				m_Clients.Add(hash, new GameClient(tcpStateObj.tcpSocket, null,null));
 
 				// ---- Gen a Udp state object ----
-				IPEndPoint ep = new IPEndPoint(IPAddress.Any, 0);		// Generate free port to listen on
+				IPEndPoint ep = new IPEndPoint(IPAddress.Parse(GetLocalIPAddress()), 0);		// Generate free port to listen on
 				UdpClient localUdp = new UdpClient(ep);                     // Create 
 
 				UdpStateObject udpStateObj = new UdpStateObject();
@@ -561,12 +563,27 @@ namespace Server
 			}
 		}
 
-		static void Main(string[] args)
-		{
-			//string json = "{ \"name\" : \"alex\", \"age\" : 29 } ";
+        public static string GetLocalIPAddress()
+        {
+            var host = Dns.GetHostEntry(Dns.GetHostName());
+            for (int ip = host.AddressList.Length-1; ip >=0; --ip)
+            {
+                if ( host.AddressList[ip].AddressFamily == AddressFamily.InterNetwork)
+                {
+                    return host.AddressList[ip].ToString();
+                }
+            }
+            throw new Exception("Local IP Address Not Found!");
+        }
 
-			// Pack into JSON like this to send out
-			regPacket rp = new regPacket("reg", 0, 2456);
+        static void Main(string[] args)
+		{
+            //string json = "{ \"name\" : \"alex\", \"age\" : 29 } ";
+
+            // Pack into JSON like this to send out
+
+            /*
+            regPacket rp = new regPacket("reg", 0, 2456);
 			string jsonS = fastJSON.JSON.ToJSON(rp);
 
 			// Do this to parse back
@@ -579,6 +596,38 @@ namespace Server
 					// Could deal with individual members here or cast to packet
 				}
 			}
+            */
+
+            bool done = false;
+            int broadcastPort = 8081;
+
+            UdpClient listener = new UdpClient(broadcastPort);
+            IPEndPoint groupEP = new IPEndPoint(IPAddress.Any, broadcastPort);
+
+            try
+            {
+                while (!done)
+                {
+                    Console.WriteLine("Waiting for broadcast");
+                    byte[] buff = listener.Receive(ref groupEP);
+
+                    //string msg = Encoding.ASCII.GetString(buff, 0, buff.Length);
+                    Console.WriteLine("Received broadcast from {0}",groupEP.ToString());
+
+                    Byte[] msg = Encoding.ASCII.GetBytes("Message");
+                    listener.Send(msg, msg.Length, groupEP);
+                    done = true;
+                }
+            }
+            catch(Exception e)
+            {
+                Console.WriteLine("Exception {0}", e.Message);
+            }
+            finally
+            {
+                listener.Close();
+            }
+            
 
 			AsynchSocketListener.StartListeningForNewClients();
 			Console.ReadLine();	
