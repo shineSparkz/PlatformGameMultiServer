@@ -16,3 +16,13 @@ C:\DocumentsC\university\year3\multi\DemonGame\PlatformGameMultiServer\Server\bi
 C:\DocumentsC\university\year3\multi\DemonGame\PlatformGameMultiServer\Server\bin\x86\Release\fastJSON.dll
 C:\DocumentsC\university\year3\multi\DemonGame\PlatformGameMultiServer\Server\bin\x86\Release\fastJSON.pdb
 C:\DocumentsC\university\year3\multi\DemonGame\PlatformGameMultiServer\Server\obj\x86\Release\Server.csprojResolveAssemblyReference.cache
+E:\Documents\uni\year_3\multiplayer\PlatformGameMultiServer\Server\bin\x86\Release\Server.exe.config
+E:\Documents\uni\year_3\multiplayer\PlatformGameMultiServer\Server\obj\x86\Release\Server.exe
+E:\Documents\uni\year_3\multiplayer\PlatformGameMultiServer\Server\obj\x86\Release\Server.pdb
+E:\Documents\uni\year_3\multiplayer\PlatformGameMultiServer\Server\bin\x86\Release\Server.exe
+E:\Documents\uni\year_3\multiplayer\PlatformGameMultiServer\Server\bin\x86\Release\Server.pdb
+E:\Documents\uni\year_3\multiplayer\PlatformGameMultiServer\Server\bin\x86\Release\fastJSON.dll
+E:\Documents\uni\year_3\multiplayer\PlatformGameMultiServer\Server\bin\x86\Release\Microsoft.Xna.Framework.dll
+E:\Documents\uni\year_3\multiplayer\PlatformGameMultiServer\Server\bin\x86\Release\fastJSON.pdb
+E:\Documents\uni\year_3\multiplayer\PlatformGameMultiServer\Server\bin\x86\Release\Microsoft.Xna.Framework.xml
+E:\Documents\uni\year_3\multiplayer\PlatformGameMultiServer\Server\obj\x86\Release\Server.csprojResolveAssemblyReference.cache
