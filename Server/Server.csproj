@@ -86,6 +86,9 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="GameSpecific\GameSimulation.cs" />
+    <Compile Include="Server\AsynchSocketListener.cs" />
+    <Compile Include="Server\ClientManager.cs" />
     <Compile Include="Server\GameClient.cs" />
     <Compile Include="GameSpecific\GameObject.cs" />
     <Compile Include="Server\ServerDefs.cs" />
@@ -93,13 +96,12 @@
     <Compile Include="GameSpecific\PacketDefs.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Utils\Logger.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Utils\" />
-  </ItemGroup>
+  <ItemGroup />
   <ItemGroup>
     <ProjectReference Include="..\fastJSON\fastJSON.csproj">
       <Project>{207e91b1-c9f8-4913-88e1-3549ef5f3273}</Project>

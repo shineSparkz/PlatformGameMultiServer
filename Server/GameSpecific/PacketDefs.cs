@@ -8,6 +8,13 @@ namespace Server.GameSpecific
 {
     public class PacketDefs
     {
+		public enum PacketID
+		{
+			Register,
+			CreateObject,
+			UpdateObject,
+		}
+
 		public class ObjetUpdate
 		{
 
