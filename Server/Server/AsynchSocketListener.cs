@@ -58,6 +58,19 @@ namespace Server.Server
 
 		private static void AcceptCallback(IAsyncResult ar)
 		{
+            // 1 -- This function should only
+            //      - Create Sockets
+            //      - Add client to client manager
+            //      - Send a tcp packet called connect
+
+            // 2 -- Then once they have established a connection they should send us a register with their details
+            //      - Later we would add another layer here, such as adding them, to a database etc
+            
+            // 3 -- Once they are registered and logged in, then they can choose to start a game and set us a level number
+            //      - If it's first client then we will do the hardcoded level data and then send them the client update etc
+                  
+
+
 			allDone.Set();
 
 			// ---- Set up tcp socket ----
@@ -94,53 +107,49 @@ namespace Server.Server
 			// Store this in client data
 			ServerManager.SetLocalUdpPort(hash, port);
 
-			// **Important -- SEND Register Function and give them their id which they must store, and use in all packets
-			//				  so we know who they are, also send them local udp port that we are listening for them on.
-
-			//ServerManager.SendTcp(tcpStateObj.tcpSocket, string.Format("reg:{0}:{1}:!", hash, port));
-			ServerManager.SendTcp(tcpStateObj.tcpSocket, fastJSON.JSON.ToJSON(new PacketDefs.regPacket(PacketDefs.PacketID.Register, hash, port), PacketDefs.JsonParams()));
+			// **Important -- SEND Register Function and give them their id which they must store, and use in all packets so we know who they are, also send them local udp port that we are listening for them on.
+			ServerManager.SendTcp(tcpStateObj.tcpSocket, fastJSON.JSON.ToJSON(new PacketDefs.regPacket(hash, port), PacketDefs.JsonParams()));
 
 			// We want to add them to the level and send them the level
 			ServerManager.SetPlayerHandle(hash, GameSimulation.NumObjects());
+
 
 			GameObject newPlayer = new GameObject(GameObjectType.Player, GameSimulation.NumObjects());
 			newPlayer.isClientPlayer = 1;
 			GameSimulation.AddGameObject(newPlayer);
 
-			// Create data to send out, *note* the 'isClient' flag is delibrately set to false, as this is the other clients who get this
-			PacketDefs.GameObjectPacket gameObjectPak = 
-				new PacketDefs.GameObjectPacket((int)newPlayer.object_id, newPlayer.unique_id, newPlayer.Position.X, newPlayer.Position.Y, 0);
+            // Create Packet to send to other clients already on server with just this player. *note* last param is set to 0 intentionally
+            PacketDefs.MultiGameObjectPacket thisClientPacket = new PacketDefs.MultiGameObjectPacket(1);
+            thisClientPacket.objects[0] = new PacketDefs.GameObjectPacket(
+                (int)newPlayer.object_id, newPlayer.unique_id, newPlayer.Position.X, newPlayer.Position.Y, 0);
 
-			// First Send this new player to current clients
-			ServerManager.SendAllTcpExcept(fastJSON.JSON.ToJSON(gameObjectPak, PacketDefs.JsonParams()), hash);
+            // Create Packet for list of all clients now to send to new player
+            PacketDefs.MultiGameObjectPacket allClientsPacket =
+                new PacketDefs.MultiGameObjectPacket(ServerManager.NumClients());
 
-			// Now send to this client 
-			gameObjectPak.clt = 1;
-			ServerManager.SendTcp(tcpStateObj.tcpSocket, fastJSON.JSON.ToJSON(gameObjectPak, PacketDefs.JsonParams()));
+            // Fill it with data
+            int i = 0;
+            foreach (GameObject p in GameSimulation.GetObjects())
+            {
+                if (p.object_id == GameObjectType.Player)
+                {
+                    allClientsPacket.objects[i] = new PacketDefs.GameObjectPacket(
+                        (int)p.object_id,
+                        p.unique_id,
+                        p.Position.X,
+                        p.Position.Y,
+                        p.isClientPlayer);
 
-			//**************************************
-			// TODO : The new client needs to know about the clients on the server
+                    ++i;
+                }
+            }
+  
+            // 1 - Send any clients on the server the new one that has been added
+			ServerManager.SendAllTcpExcept(fastJSON.JSON.ToJSON(thisClientPacket, PacketDefs.JsonParams()), hash);
 
-			/*
-			// --- Current clients need to add this new player game object
-			ServerManager.SendAllTcpExcept(string.Format("mapdata:{0},{1},{2},{3},{4},:!", (int)newPlayer.object_id, newPlayer.unique_id, (int)newPlayer.Position.X, (int)newPlayer.Position.Y, 0), hash);
 
-			// Send new client all of the game objects
-			string LevelPacket = "mapdata:";
-			foreach (GameObject go in GameSimulation.GetObjects())
-			{
-				LevelPacket += string.Format("{0},{1},{2},{3},{4},:",
-					(int)go.object_id,
-					go.unique_id,
-					(int)go.Position.X,
-					(int)go.Position.Y,
-					go.isClientPlayer);
-			}
-
-			LevelPacket += "!";
-
-			ServerManager.SendTcp(tcpStateObj.tcpSocket, LevelPacket);
-			*/
+            // 2 - Send the new client his own player details and the other players in the game
+            ServerManager.SendTcp(tcpStateObj.tcpSocket, fastJSON.JSON.ToJSON(allClientsPacket, PacketDefs.JsonParams()));
 
 			// Set this back for the next new client
 			newPlayer.isClientPlayer = 0;
@@ -166,7 +175,7 @@ namespace Server.Server
 			Logger.Log(string.Format("Number of clients connected {0}.\nNew client TCP Endpoint {1}.\nWaiting for udp connection on port {2}",
 				ServerManager.NumClients(), localTcp.RemoteEndPoint, port));
 		}
-
+    
 		public static void TcpReadCallback(IAsyncResult ar)
 		{
 			TcpStateObject state = (TcpStateObject)ar.AsyncState;
@@ -240,7 +249,6 @@ namespace Server.Server
 				{
 					// Send Back to sender only to establish udp connection
 					ServerManager.SendUdp(id, receiveString);
-
 					udplistener.BeginReceive(new AsyncCallback(UdpReadCallback), listenstate);
 				}
 				else

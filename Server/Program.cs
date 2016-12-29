@@ -20,18 +20,21 @@ namespace Server
 {
     /*
         TODO
-        - JSON proto
+        - Separate starting a game and connecting
         - SQL data
         - Store clients in database
         - Security
-        - Persisitance, say for exp or something
-        - Separate starting a game and connecting
-        - Hashing messages id's rather than strings
         - The idea of server knowing which level to load
+        
+        - Persisitance, say for exp or something
         - Update game state on server (like physics)
+
+        DONE
+        - JSON proto
+        
     */
 
-	class Program
+    class Program
 	{
 		public static void broadCast_t()
 		{
@@ -101,7 +104,7 @@ namespace Server
 
 			PacketDefs.Start();
 
-			/*
+            /*
 			PacketDefs.mapPacket map = new PacketDefs.mapPacket();
 			map.Objects.Add(new PacketDefs.GameObjectPacket(0, 1, 2.0f, 4.0f, false));
 			map.Objects.Add(new PacketDefs.GameObjectPacket(0, 2, 4.0f, 7.0f, true));
@@ -111,9 +114,24 @@ namespace Server
 			Dictionary<string, object> JDATA = (Dictionary<string, object>)fastJSON.JSON.Parse(jd);
 			*/
 
+            /*
+            // Create Packet for list of all clients
+            PacketDefs.MultiGameObjectPacket allClientsPacket =
+                new PacketDefs.MultiGameObjectPacket(2);
 
-			// Start broadcasting thread
-			Thread bcastThread = new Thread(new ThreadStart(broadCast_t));
+            allClientsPacket.objects[0] = new PacketDefs.GameObjectPacket(
+                0,1,0,0,1);
+            allClientsPacket.objects[1] = new PacketDefs.GameObjectPacket(
+            0, 1, 0,30, 2);
+
+            string jd = fastJSON.JSON.ToJSON(allClientsPacket, PacketDefs.JsonParams());
+            Dictionary<string, object> JDATA = (Dictionary<string, object>)fastJSON.JSON.Parse(jd);
+            */
+
+
+
+            // Start broadcasting thread
+            Thread bcastThread = new Thread(new ThreadStart(broadCast_t));
 			bcastThread.Name = "BroadcastThread";
 			bcastThread.Start();
 			

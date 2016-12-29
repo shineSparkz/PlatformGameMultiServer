@@ -58,9 +58,23 @@ namespace Server.GameSpecific
 			return m_GameObjects;
 		}
 
+        public static List<GameObject> GetPlayers()
+        {
+            List<GameObject> ret = new List<GameObject>();
+
+            foreach (GameObject go in m_GameObjects)
+            {
+                if (go.object_id == GameObjectType.Player)
+                {
+                    ret.Add(go);
+                }
+            }
+
+            return ret;
+        }
+
 		public static void InputUpdate(int handle, int key)
 		{
-
 			// TODO : Check this handle for null and log if so
 			GameObject player = m_GameObjects[handle];
 
@@ -171,13 +185,11 @@ namespace Server.GameSpecific
 			//GameObjects[playerHandle].Position = new Vector2(((float)(int)m_Position.X), ((float)(int)m_Position.Y));
 			m_GameObjects[handle].Position += velocity;
 
-			// TODO : 
-			// Send updated object
-			ServerManager.SendAllUdp(string.Format("objupd:{0}:{1}:{2}:",
-				handle,
-				(int)m_GameObjects[handle].Position.X,
-				(int)m_GameObjects[handle].Position.Y
-			));
+            PacketDefs.PlayerInputUpdatePacket updatePacket = new PacketDefs.PlayerInputUpdatePacket(
+                handle, m_GameObjects[handle].Position.X, m_GameObjects[handle].Position.Y);
+
+            ServerManager.SendAllUdp(fastJSON.JSON.ToJSON(
+                updatePacket, PacketDefs.JsonParams()));
 		}
 	}
 }

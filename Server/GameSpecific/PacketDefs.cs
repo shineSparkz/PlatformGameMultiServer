@@ -10,9 +10,10 @@ namespace Server.GameSpecific
     {
 		public enum PacketID
 		{
-			Register,
-			SendMap,
-			UpdateObject,
+			Register_Tcp,
+			GamePlayerObjects_Tcp,
+
+            UpdateInput_Udp,
 		}
 
 		private static fastJSON.JSONParameters m_JsonParams = new fastJSON.JSONParameters();
@@ -31,7 +32,28 @@ namespace Server.GameSpecific
 			return m_JsonParams;
 		}
 
-		[Serializable()]
+        // Note this is in a list, it shouldnt be used as as packet
+        [Serializable()]
+        public class GameObjectPacket
+        {
+            public int oid;         // Obj Id
+            public int uid;         // Unique Id
+            public float px;        // Position x	
+            public float py;        // Position y
+            public int clt;         // Is Client
+
+            public GameObjectPacket(int objId, int uniqId, float px, float py, int isClient)
+            {
+                this.oid = objId;
+                this.uid = uniqId;
+                this.px = px;
+                this.py = py;
+                this.clt = isClient;
+            }
+        }
+
+        #region Packets
+        [Serializable()]
 		public class basepacket
 		{
 			public int name { get; set; }
@@ -47,32 +69,42 @@ namespace Server.GameSpecific
 			{
 			}
 
-			public regPacket(PacketID name, int clientId, int udpPort)
+			public regPacket(int clientId, int udpPort)
 			{
-				this.name = (int)name;
+				this.name = (int)PacketDefs.PacketID.Register_Tcp;
 				this.clientId = clientId;
 				this.udpPort = udpPort;
 			}
 		}
 
-		[Serializable()]
-		public class GameObjectPacket : basepacket
-		{
-			public int oid;			// Obj Id
-			public int uid;			// Unique Id
-			public float px;		// Position x	
-			public float py;		// Position y
-			public int clt;			// Is Client
+        [Serializable()]
+        public class MultiGameObjectPacket : basepacket
+        {
+            public GameObjectPacket[] objects = null;
 
-			public GameObjectPacket(int objId, int uniqId, float px, float py, int isClient)
-			{
-				this.name = (int)PacketDefs.PacketID.SendMap;
-				this.oid = objId;
-				this.uid = uniqId;
-				this.px = px;
-				this.py = py;
-				this.clt = isClient;
-			}
-		}
+            public MultiGameObjectPacket(int numClients)
+            {
+                this.name = (int)PacketDefs.PacketID.GamePlayerObjects_Tcp;
+                this.objects = new GameObjectPacket[numClients];
+            }
+        }
+
+        [Serializable()]
+        public class PlayerInputUpdatePacket : basepacket
+        {
+            public int handle;
+            public float px;
+            public float py;
+
+            public PlayerInputUpdatePacket(int handle, float x, float y)
+            {
+                this.name = (int)PacketDefs.PacketID.UpdateInput_Udp;
+                this.handle = handle;
+                this.px = x;
+                this.py = y;
+            }
+        }
+
+        #endregion
     }
 }
