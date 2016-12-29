@@ -97,7 +97,8 @@ namespace Server.Server
 			// **Important -- SEND Register Function and give them their id which they must store, and use in all packets
 			//				  so we know who they are, also send them local udp port that we are listening for them on.
 
-			ServerManager.SendTcp(tcpStateObj.tcpSocket, string.Format("reg:{0}:{1}:!", hash, port));
+			//ServerManager.SendTcp(tcpStateObj.tcpSocket, string.Format("reg:{0}:{1}:!", hash, port));
+			ServerManager.SendTcp(tcpStateObj.tcpSocket, fastJSON.JSON.ToJSON(new PacketDefs.regPacket(PacketDefs.PacketID.Register, hash, port), PacketDefs.JsonParams()));
 
 			// We want to add them to the level and send them the level
 			ServerManager.SetPlayerHandle(hash, GameSimulation.NumObjects());
@@ -106,8 +107,21 @@ namespace Server.Server
 			newPlayer.isClientPlayer = 1;
 			GameSimulation.AddGameObject(newPlayer);
 
-			// TODO : Need to associate this player object with the client and rmeove it too
+			// Create data to send out, *note* the 'isClient' flag is delibrately set to false, as this is the other clients who get this
+			PacketDefs.GameObjectPacket gameObjectPak = 
+				new PacketDefs.GameObjectPacket((int)newPlayer.object_id, newPlayer.unique_id, newPlayer.Position.X, newPlayer.Position.Y, 0);
 
+			// First Send this new player to current clients
+			ServerManager.SendAllTcpExcept(fastJSON.JSON.ToJSON(gameObjectPak, PacketDefs.JsonParams()), hash);
+
+			// Now send to this client 
+			gameObjectPak.clt = 1;
+			ServerManager.SendTcp(tcpStateObj.tcpSocket, fastJSON.JSON.ToJSON(gameObjectPak, PacketDefs.JsonParams()));
+
+			//**************************************
+			// TODO : The new client needs to know about the clients on the server
+
+			/*
 			// --- Current clients need to add this new player game object
 			ServerManager.SendAllTcpExcept(string.Format("mapdata:{0},{1},{2},{3},{4},:!", (int)newPlayer.object_id, newPlayer.unique_id, (int)newPlayer.Position.X, (int)newPlayer.Position.Y, 0), hash);
 
@@ -126,11 +140,12 @@ namespace Server.Server
 			LevelPacket += "!";
 
 			ServerManager.SendTcp(tcpStateObj.tcpSocket, LevelPacket);
+			*/
 
 			// Set this back for the next new client
 			newPlayer.isClientPlayer = 0;
 
-			// *** TODO SET THIS BACK, or test if it needs to
+			// *** TODO SET THIS BACK in the client hash, or test if it needs to
 
 			// ---- Begin Async Tcp receive for this client
 			tcpStateObj.tcpSocket.BeginReceive(

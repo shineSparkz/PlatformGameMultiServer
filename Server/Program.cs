@@ -18,34 +18,6 @@ using Server.GameSpecific;
 
 namespace Server
 {
-
-	#region [   data objects   ]
-
-	[Serializable]
-	public class basepacket
-	{
-		public string Name { get; set; }
-	}
-
-	[Serializable]
-	public class regPacket : basepacket
-	{
-		public int clientId;
-		public int udpPort;
-
-		public regPacket()
-		{
-		}
-
-		public regPacket(string name, int clientId, int udpPort)
-		{
-			Name = name;
-			this.clientId = clientId;
-			this.udpPort = udpPort;
-		}
-	}
-	#endregion
-
     /*
         TODO
         - JSON proto
@@ -97,27 +69,48 @@ namespace Server
 
         static void Main(string[] args)
 		{
-			//string json = "{ \"name\" : \"alex\", \"age\" : 29 } ";
+			/*
+			//string jrp = "{ \"name\" : 0, \"age\" : 29 } ";
 
 			// Pack into JSON like this to send out
 
-			/*
-            regPacket rp = new regPacket("reg", 0, 2456);
-			string jsonS = fastJSON.JSON.ToJSON(rp);
+			PacketDefs.regPacket rp = new PacketDefs.regPacket(PacketDefs.PacketID.Register, 0, 2456);
+			string jrp = fastJSON.JSON.ToJSON(rp);
 
-			// Do this to parse back
-			Dictionary<string, object> JDATA = (Dictionary<string, object>)fastJSON.JSON.Parse(jsonS);
+			Dictionary<string, object> JDATA = (Dictionary<string, object>)fastJSON.JSON.Parse(jrp);
 
-			if (JDATA.ContainsKey("Name"))
+			if (JDATA.ContainsKey("name"))
 			{
-				if (JDATA["Name"] == "reg")
+				try
 				{
-					// Could deal with individual members here or cast to packet
+					//JDATA["name"]
+					long name = (long)JDATA["name"];
+
+					if (name == (int)PacketDefs.PacketID.Register)
+					{
+						
+					}
+				}
+				catch (Exception e)
+				{
+					string err = e.Message;
+					Console.WriteLine(err);
 				}
 			}
             */
 
-			
+			PacketDefs.Start();
+
+			/*
+			PacketDefs.mapPacket map = new PacketDefs.mapPacket();
+			map.Objects.Add(new PacketDefs.GameObjectPacket(0, 1, 2.0f, 4.0f, false));
+			map.Objects.Add(new PacketDefs.GameObjectPacket(0, 2, 4.0f, 7.0f, true));
+
+			string jd = fastJSON.JSON.ToJSON(map, PacketDefs.JsonParams());
+
+			Dictionary<string, object> JDATA = (Dictionary<string, object>)fastJSON.JSON.Parse(jd);
+			*/
+
 
 			// Start broadcasting thread
 			Thread bcastThread = new Thread(new ThreadStart(broadCast_t));

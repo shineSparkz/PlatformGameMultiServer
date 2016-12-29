@@ -58,7 +58,6 @@ namespace Server.GameSpecific
 
 		public int isClientPlayer = 0;
 
-
 		public Vector2 Position
 		{
 			get
