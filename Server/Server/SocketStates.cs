@@ -13,7 +13,6 @@ namespace Server.Server
 	{
 		public Socket tcpSocket = null;
 		public byte[] buffer = new byte[ServerDefs.BUFF_SIZE];
-		public StringBuilder strBldr = new StringBuilder();
 	}
 
 	public class UdpStateObject

@@ -8,13 +8,21 @@ namespace Server.GameSpecific
 {
     public class PacketDefs
     {
-		public enum PacketID
+		public enum ID
 		{
-			Register_Tcp,
-			GamePlayerObjects_Tcp,
+			// TCP out
+			OUT_TCP_Register,
+			OUT_TCP_NewPlayerObject,
 
-            UpdateInput_Udp,
-		}
+			// UDP out
+			OUT_UDP_UpdatedObject,
+
+			// TCP in
+			IN_TCP_StartGame,
+
+			// UDP oin
+			IN_UDP_Input,
+		}	
 
 		private static fastJSON.JSONParameters m_JsonParams = new fastJSON.JSONParameters();
 		
@@ -53,6 +61,7 @@ namespace Server.GameSpecific
         }
 
         #region Packets
+		// ---- These are only relating to OUT packets ----
         [Serializable()]
 		public class basepacket
 		{
@@ -71,7 +80,7 @@ namespace Server.GameSpecific
 
 			public regPacket(int clientId, int udpPort)
 			{
-				this.name = (int)PacketDefs.PacketID.Register_Tcp;
+				this.name = (int)ID.OUT_TCP_Register;
 				this.clientId = clientId;
 				this.udpPort = udpPort;
 			}
@@ -84,7 +93,7 @@ namespace Server.GameSpecific
 
             public MultiGameObjectPacket(int numClients)
             {
-                this.name = (int)PacketDefs.PacketID.GamePlayerObjects_Tcp;
+				this.name = (int)ID.OUT_TCP_NewPlayerObject;
                 this.objects = new GameObjectPacket[numClients];
             }
         }
@@ -98,7 +107,7 @@ namespace Server.GameSpecific
 
             public PlayerInputUpdatePacket(int handle, float x, float y)
             {
-                this.name = (int)PacketDefs.PacketID.UpdateInput_Udp;
+				this.name = (int)ID.OUT_UDP_UpdatedObject;
                 this.handle = handle;
                 this.px = x;
                 this.py = y;

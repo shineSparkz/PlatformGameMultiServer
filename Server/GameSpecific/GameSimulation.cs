@@ -19,16 +19,30 @@ namespace Server.GameSpecific
 		const int LEFT = 2;
 		const int RIGHT = 3;
 
-		private static List<GameObject> m_GameObjects = new List<GameObject>();
+		private List<GameObject> m_GameObjects = new List<GameObject>();
+		private bool m_GameLoaded = false;
+		private ServerManager m_ServerManager = null;
 
-		public static void ClearGameData()
+		public GameSimulation(ServerManager sMan)
 		{
-			m_GameObjects.Clear();
+			m_ServerManager = sMan;
 		}
 
-		public static void LoadLevel(int levelNumber)
+		public bool IsGameDataLoaded()
+		{
+			return m_GameLoaded;
+		}
+
+		public void ClearGameData()
+		{
+			m_GameObjects.Clear();
+			m_GameLoaded = false;
+		}
+
+		public void LoadLevel(int levelNumber)
 		{
 			// TODO : Load level in from client request
+			m_GameLoaded = true;
 
 			for (int i = 1; i < 12; ++i)
 			{
@@ -38,27 +52,27 @@ namespace Server.GameSpecific
 			m_GameObjects.Add(new GameObject(new Vector2(7 * 64, 350), GameObjectType.Wall, m_GameObjects.Count));
 		}
 
-		public static void AddGameObject(GameObject go)
+		public void AddGameObject(GameObject go)
 		{
 			m_GameObjects.Add(go);
 		}
 
-		public static int NumObjects()
+		public int NumObjects()
 		{
 			return m_GameObjects.Count;
 		}
 
-		public static GameObject GetObject(int i)
+		public GameObject GetObject(int i)
 		{
 			return i >= 0 && i < m_GameObjects.Count ? m_GameObjects[i] : null;
 		}
 
-		public static List<GameObject> GetObjects()
+		public List<GameObject> GetObjects()
 		{
 			return m_GameObjects;
 		}
 
-        public static List<GameObject> GetPlayers()
+        public List<GameObject> GetPlayers()
         {
             List<GameObject> ret = new List<GameObject>();
 
@@ -73,7 +87,7 @@ namespace Server.GameSpecific
             return ret;
         }
 
-		public static void InputUpdate(int handle, int key)
+		public void InputUpdate(int handle, int key)
 		{
 			// TODO : Check this handle for null and log if so
 			GameObject player = m_GameObjects[handle];
@@ -188,7 +202,7 @@ namespace Server.GameSpecific
             PacketDefs.PlayerInputUpdatePacket updatePacket = new PacketDefs.PlayerInputUpdatePacket(
                 handle, m_GameObjects[handle].Position.X, m_GameObjects[handle].Position.Y);
 
-            ServerManager.SendAllUdp(fastJSON.JSON.ToJSON(
+            m_ServerManager.SendAllUdp(fastJSON.JSON.ToJSON(
                 updatePacket, PacketDefs.JsonParams()));
 		}
 	}

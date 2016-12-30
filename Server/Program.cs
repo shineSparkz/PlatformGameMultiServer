@@ -18,23 +18,25 @@ using Server.GameSpecific;
 
 namespace Server
 {
-    /*
+	/*
         TODO
-        - Separate starting a game and connecting
+        - The idea of server knowing which level to load
         - SQL data
         - Store clients in database
         - Security
-        - The idea of server knowing which level to load
         
         - Persisitance, say for exp or something
         - Update game state on server (like physics)
 
         DONE
         - JSON proto
+		- Sort all static stuff
+        - Separate starting a game and connecting
+
         
     */
 
-    class Program
+	class Program
 	{
 		public static void broadCast_t()
 		{
@@ -134,8 +136,11 @@ namespace Server
             Thread bcastThread = new Thread(new ThreadStart(broadCast_t));
 			bcastThread.Name = "BroadcastThread";
 			bcastThread.Start();
-			
-			AsynchSocketListener.StartListeningForNewClients();
+
+			AsynchSocketListener server = new AsynchSocketListener();
+			server.StartListeningForNewClients();
+
+			//AsynchSocketListener.StartListeningForNewClients();
 			Console.ReadLine();	
 		}
 	}

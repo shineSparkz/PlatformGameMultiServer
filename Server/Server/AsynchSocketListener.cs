@@ -16,15 +16,22 @@ namespace Server.Server
 	public class AsynchSocketListener
 	{
 		// Thread signal.
-		public static ManualResetEvent allDone = new ManualResetEvent(false);
+		public ManualResetEvent allDone = new ManualResetEvent(false);
+		private ServerManager m_ServerManager = null;
+		private GameSimulation m_GameSimulation = null;
+		private MessageParser m_MessageParser = null;
 
 		#region Member Functions
 
 		public AsynchSocketListener()
 		{
+			m_ServerManager = new ServerManager();
+			m_GameSimulation = m_ServerManager.GameSim();
+
+			m_MessageParser = new MessageParser(m_GameSimulation, m_ServerManager);
 		}
 
-		public static void StartListeningForNewClients()
+		public void StartListeningForNewClients()
 		{
 			// Grab our local Ip Address that we have sent out in any connected client 
 			string localIp = ServerDefs.GetLocalIPAddress();
@@ -56,21 +63,8 @@ namespace Server.Server
 			}
 		}
 
-		private static void AcceptCallback(IAsyncResult ar)
+		private void AcceptCallback(IAsyncResult ar)
 		{
-            // 1 -- This function should only
-            //      - Create Sockets
-            //      - Add client to client manager
-            //      - Send a tcp packet called connect
-
-            // 2 -- Then once they have established a connection they should send us a register with their details
-            //      - Later we would add another layer here, such as adding them, to a database etc
-            
-            // 3 -- Once they are registered and logged in, then they can choose to start a game and set us a level number
-            //      - If it's first client then we will do the hardcoded level data and then send them the client update etc
-                  
-
-
 			allDone.Set();
 
 			// ---- Set up tcp socket ----
@@ -81,16 +75,8 @@ namespace Server.Server
 			TcpStateObject tcpStateObj = new TcpStateObject();
 			tcpStateObj.tcpSocket = localTcp;
 
-
-			//****** TODO MOVE THIS TO WHEN WE GET A NEW GAME REQUEST *****
-			// Create Level data if no clients (THIS WILL ALL BE MOVED LATER)
-			if(ServerManager.NumClients() == 0 )
-			{
-				GameSimulation.LoadLevel(0);
-			}
-
 			// ---- Add a new client with this Tcp socket and get the hash ----
-			int hash = ServerManager.AddNewClient(tcpStateObj.tcpSocket);
+			int hash = m_ServerManager.AddNewClient(tcpStateObj.tcpSocket);
 
 			// ---- Gen a Udp state object on free system port----
 			IPEndPoint localUpdEndPt = new IPEndPoint(IPAddress.Parse(ServerDefs.GetLocalIPAddress()), 0); 
@@ -105,65 +91,15 @@ namespace Server.Server
 			Logger.Log(string.Format("Listening for UDP connection on port {0}", port));
 
 			// Store this in client data
-			ServerManager.SetLocalUdpPort(hash, port);
+			m_ServerManager.SetLocalUdpPort(hash, port);
 
 			// **Important -- SEND Register Function and give them their id which they must store, and use in all packets so we know who they are, also send them local udp port that we are listening for them on.
-			ServerManager.SendTcp(tcpStateObj.tcpSocket, fastJSON.JSON.ToJSON(new PacketDefs.regPacket(hash, port), PacketDefs.JsonParams()));
-
-			// We want to add them to the level and send them the level
-			ServerManager.SetPlayerHandle(hash, GameSimulation.NumObjects());
-
-
-			GameObject newPlayer = new GameObject(GameObjectType.Player, GameSimulation.NumObjects());
-			newPlayer.isClientPlayer = 1;
-			GameSimulation.AddGameObject(newPlayer);
-
-            // Create Packet to send to other clients already on server with just this player. *note* last param is set to 0 intentionally
-            PacketDefs.MultiGameObjectPacket thisClientPacket = new PacketDefs.MultiGameObjectPacket(1);
-            thisClientPacket.objects[0] = new PacketDefs.GameObjectPacket(
-                (int)newPlayer.object_id, newPlayer.unique_id, newPlayer.Position.X, newPlayer.Position.Y, 0);
-
-            // Create Packet for list of all clients now to send to new player
-            PacketDefs.MultiGameObjectPacket allClientsPacket =
-                new PacketDefs.MultiGameObjectPacket(ServerManager.NumClients());
-
-            // Fill it with data
-            int i = 0;
-            foreach (GameObject p in GameSimulation.GetObjects())
-            {
-                if (p.object_id == GameObjectType.Player)
-                {
-                    allClientsPacket.objects[i] = new PacketDefs.GameObjectPacket(
-                        (int)p.object_id,
-                        p.unique_id,
-                        p.Position.X,
-                        p.Position.Y,
-                        p.isClientPlayer);
-
-                    ++i;
-                }
-            }
-  
-            // 1 - Send any clients on the server the new one that has been added
-			ServerManager.SendAllTcpExcept(fastJSON.JSON.ToJSON(thisClientPacket, PacketDefs.JsonParams()), hash);
-
-
-            // 2 - Send the new client his own player details and the other players in the game
-            ServerManager.SendTcp(tcpStateObj.tcpSocket, fastJSON.JSON.ToJSON(allClientsPacket, PacketDefs.JsonParams()));
-
-			// Set this back for the next new client
-			newPlayer.isClientPlayer = 0;
-
-			// *** TODO SET THIS BACK in the client hash, or test if it needs to
+			m_ServerManager.SendTcp(tcpStateObj.tcpSocket, fastJSON.JSON.ToJSON(new PacketDefs.regPacket(hash, port), PacketDefs.JsonParams()));
 
 			// ---- Begin Async Tcp receive for this client
-			tcpStateObj.tcpSocket.BeginReceive(
-				tcpStateObj.buffer,                     // Buffer
-				0,                                      // Offset
-				ServerDefs.BUFF_SIZE,                   // Size
-				0,                                      // Flags
-				new AsyncCallback(TcpReadCallback),     // Callback
-				tcpStateObj                             // Object
+			tcpStateObj.tcpSocket.BeginReceive(tcpStateObj.buffer, 0,                                     
+				ServerDefs.BUFF_SIZE, 0,                                     
+				new AsyncCallback(TcpReadCallback), tcpStateObj                            
 			);
 
 			// ----  The client knows this local udp port, so if/when we get a message from them on this, we can add their end
@@ -173,10 +109,10 @@ namespace Server.Server
 
 			Logger.Log("New client connected to server");
 			Logger.Log(string.Format("Number of clients connected {0}.\nNew client TCP Endpoint {1}.\nWaiting for udp connection on port {2}",
-				ServerManager.NumClients(), localTcp.RemoteEndPoint, port));
+				m_ServerManager.NumClients(), localTcp.RemoteEndPoint, port));
 		}
-    
-		public static void TcpReadCallback(IAsyncResult ar)
+
+		public void TcpReadCallback(IAsyncResult ar)
 		{
 			TcpStateObject state = (TcpStateObject)ar.AsyncState;
 			Socket tcp_socket = state.tcpSocket;
@@ -193,23 +129,15 @@ namespace Server.Server
 
 			if (bytesRead > 0)
 			{
-				// **** TODO Pass this over to a parsing system
-
 				// Parse
-				state.strBldr.Append(Encoding.ASCII.GetString(state.buffer, 0, bytesRead));
+				m_MessageParser.ParseMessage(Encoding.ASCII.GetString(state.buffer, 0, bytesRead));
 
 				// Clear
 				state.buffer = new byte[ServerDefs.BUFF_SIZE];
-				state.strBldr.Clear();
 
-				// Start a new callback?
-				state.tcpSocket.BeginReceive(
-					state.buffer,
-					0,
-					ServerDefs.BUFF_SIZE,
-					0,
-					new AsyncCallback(TcpReadCallback),
-					state
+				// Start a new callback
+				state.tcpSocket.BeginReceive(state.buffer, 0, ServerDefs.BUFF_SIZE,
+					0, new AsyncCallback(TcpReadCallback), state
 				);
 			}
 			else
@@ -217,19 +145,19 @@ namespace Server.Server
 				// Shut down
 				Logger.Log("Removing client and closing sockets");
 
-				ServerManager.RemoveClient(tcp_socket);
+				m_ServerManager.RemoveClient(tcp_socket);
 
 				// Re-allocate next time we get a client
-				if (ServerManager.NumClients() == 0)
+				if (m_ServerManager.NumClients() == 0)
 				{
-					GameSimulation.ClearGameData();
+					m_GameSimulation.ClearGameData();
 				}
 
-				Logger.Log(string.Format("Number of clients: {0}", ServerManager.NumClients()), Logger.LogPrio.Warning);
+				Logger.Log(string.Format("Number of clients: {0}", m_ServerManager.NumClients()), Logger.LogPrio.Warning);
 			}
 		}
 
-		public static void UdpInitialReadCallback(IAsyncResult ar)
+		public void UdpInitialReadCallback(IAsyncResult ar)
 		{
 			Logger.Log("Got clients first udp message..... attemping to bind sockets");
 
@@ -243,12 +171,12 @@ namespace Server.Server
 			string[] spl_str = receiveString.Split(':');
 			Int32 id = Convert.ToInt32(spl_str[0]);
 
-			if(ServerManager.ClientExists(id))
+			if(m_ServerManager.ClientExists(id))
 			{
-				if (ServerManager.ConnectToRemoteEndPoint(id, remoteEndpoint))
+				if (m_ServerManager.ConnectToRemoteEndPoint(id, remoteEndpoint))
 				{
 					// Send Back to sender only to establish udp connection
-					ServerManager.SendUdp(id, receiveString);
+					m_ServerManager.SendUdp(id, receiveString);
 					udplistener.BeginReceive(new AsyncCallback(UdpReadCallback), listenstate);
 				}
 				else
@@ -264,40 +192,145 @@ namespace Server.Server
 			}
 		}
 
-		public static void UdpReadCallback(IAsyncResult ar)
+		public void UdpReadCallback(IAsyncResult ar)
 		{
 			UdpStateObject listenstate = (UdpStateObject)(ar.AsyncState);
 			UdpClient udplistener = listenstate.udpSocket;
 			IPEndPoint remoteEndpoint = listenstate.endPoint;
 
 			Byte[] receiveBytes = udplistener.EndReceive(ar, ref remoteEndpoint);
-			string receiveString = Encoding.ASCII.GetString(receiveBytes);
 
-			// Parse here for now, hardcoded one off thing for now
-			string[] spl_str = receiveString.Split(':');
-			if (spl_str.Length >= 3)
-			{
-				string type = spl_str[0];
-
-				// Dont want to do this here
-				// ****** TODO : Need a hash here
-				if (type == "input")
-				{
-					int key = Convert.ToInt32(spl_str[1]);
-					int client_id = Convert.ToInt32(spl_str[2]);
-
-					// Get this from handle
-					//int playerHandle = m_Clients[client_id].playerObjectHandle;
-					int playerHandle = ServerManager.GetPlayerHandle(client_id);
-
-					GameSimulation.InputUpdate(playerHandle, key);
-				}
-			}
+			m_MessageParser.ParseMessage(Encoding.ASCII.GetString(receiveBytes));
 
 			// Loop around
 			udplistener.BeginReceive(new AsyncCallback(UdpReadCallback), listenstate);
 		}
-
 		#endregion
+
+		/*
+		private void ParseMessage(string msg)
+		{
+			// TODO : This needs to be in some kind of co-routine or thread
+			Dictionary<string, object> JsonData = null;
+
+			try
+			{
+				JsonData = (Dictionary<string, object>)fastJSON.JSON.Parse(msg);
+			}
+			catch (Exception e)
+			{
+				Logger.Log(string.Format("Exception handled: {0}", e.Message), Logger.LogPrio.Error);
+				return;
+			}
+			
+			// Get the packet ID
+			PacketDefs.ID name = (PacketDefs.ID)((long)JsonData["name"]);
+
+			switch (name)
+			{
+				case PacketDefs.ID.IN_UDP_Input:
+					{
+						long input = -1;
+						long clientId = -1;
+
+						if (JsonData.ContainsKey("input"))
+						{
+							input = (long)JsonData["input"];
+						}
+
+						if (JsonData.ContainsKey("id"))
+						{
+							clientId = (long)JsonData["id"];
+						}
+
+						if (clientId == -1 || input == -1)
+						{
+							Logger.Log("Problem parsing input packet", Logger.LogPrio.Warning);
+							return;
+						}
+
+						int playerHandle = m_ServerManager.GetPlayerHandle((int)clientId);
+						m_GameSimulation.InputUpdate(playerHandle, (int)input);
+					}
+					break;
+				case PacketDefs.ID.IN_TCP_StartGame:
+					{
+						int clientId = -1;
+
+						// Extract the id of the sender
+						if (JsonData.ContainsKey("id"))
+						{
+							clientId = (int)((long)JsonData["id"]);
+						}
+						else
+						{
+							Logger.Log("Error Parsing client id in start game packet", Logger.LogPrio.Error);
+						}
+
+						// Check that this id is in our client hash table
+						if (!m_ServerManager.ClientExists(clientId))
+						{
+							Logger.Log(string.Format("Error client id {0} does not exist", clientId), Logger.LogPrio.Error);
+							return;
+						}
+
+						// Create Level data if no clients (THIS WILL ALL BE MOVED LATER)
+						if (!m_GameSimulation.IsGameDataLoaded())
+						{
+							m_GameSimulation.LoadLevel(0);
+						}
+						
+						// We want to add them to the level and send them the level
+						m_ServerManager.SetPlayerHandle(clientId, m_GameSimulation.NumObjects());
+
+						// Now add them
+						GameObject newPlayer = new GameObject(GameObjectType.Player, m_GameSimulation.NumObjects());
+						newPlayer.isClientPlayer = 1;
+						m_GameSimulation.AddGameObject(newPlayer);
+
+						// Create Packet to send to other clients already on server with just this player. *note* last param is set to 0 intentionally
+						PacketDefs.MultiGameObjectPacket thisClientPacket = new PacketDefs.MultiGameObjectPacket(1);
+						thisClientPacket.objects[0] = new PacketDefs.GameObjectPacket(
+							(int)newPlayer.object_id, newPlayer.unique_id, newPlayer.Position.X, newPlayer.Position.Y, 0);
+
+						// Create Packet for list of all clients now to send to new player
+						PacketDefs.MultiGameObjectPacket allClientsPacket =
+							new PacketDefs.MultiGameObjectPacket(m_ServerManager.NumClients());
+
+						// Fill it with data
+						int i = 0;
+						foreach (GameObject p in m_GameSimulation.GetObjects())
+						{
+							if (p.object_id == GameObjectType.Player)
+							{
+								allClientsPacket.objects[i] = new PacketDefs.GameObjectPacket(
+									(int)p.object_id,
+									p.unique_id,
+									p.Position.X,
+									p.Position.Y,
+									p.isClientPlayer);
+
+								++i;
+							}
+						}
+
+						GameClient client = m_ServerManager.GetClient(clientId);
+
+						// 1 - Send any clients on the server the new one that has been added
+						m_ServerManager.SendAllTcpExcept(fastJSON.JSON.ToJSON(thisClientPacket, PacketDefs.JsonParams()), clientId);
+
+						// 2 - Send the new client his own player details and the other players in the game
+						m_ServerManager.SendTcp(client.tcpSocket, fastJSON.JSON.ToJSON(allClientsPacket, PacketDefs.JsonParams()));
+
+						// Set this back for the next new client
+						newPlayer.isClientPlayer = 0;
+					}
+					break;
+				default:
+					Logger.Log("Unknown packet ID received", Logger.LogPrio.Warning);
+					break;
+			}
+		}
+		*/
 	}
 }

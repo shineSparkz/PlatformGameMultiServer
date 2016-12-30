@@ -91,6 +91,7 @@
     <Compile Include="Server\ClientManager.cs" />
     <Compile Include="Server\GameClient.cs" />
     <Compile Include="GameSpecific\GameObject.cs" />
+    <Compile Include="Server\MessageParser.cs" />
     <Compile Include="Server\ServerDefs.cs" />
     <Compile Include="Server\SocketStates.cs" />
     <Compile Include="GameSpecific\PacketDefs.cs" />
