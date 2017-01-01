@@ -130,18 +130,29 @@ namespace Server
             Dictionary<string, object> JDATA = (Dictionary<string, object>)fastJSON.JSON.Parse(jd);
             */
 
-
-
             // Start broadcasting thread
             Thread bcastThread = new Thread(new ThreadStart(broadCast_t));
 			bcastThread.Name = "BroadcastThread";
 			bcastThread.Start();
 
-			AsynchSocketListener server = new AsynchSocketListener();
+            // Server manager, looks after clients and sending out data
+            ServerManager serverManager = new ServerManager();
+
+            // Game sim is for rhe updating of the game and collisions etc
+            GameSimulation gameSim = new GameSimulation(serverManager);
+            serverManager.SetGameSim(gameSim);
+
+            // Run the game sim loop on another thread
+            Thread gameLoopThread = new Thread(new ThreadStart(gameSim.Run));
+            gameLoopThread.Name = "GameLoopThread";
+            gameLoopThread.Start();
+
+            // Listen for new clients and handle incoming packets
+            AsynchSocketListener server = new AsynchSocketListener(serverManager, gameSim);
 			server.StartListeningForNewClients();
 
-			//AsynchSocketListener.StartListeningForNewClients();
-			Console.ReadLine();	
+            gameSim.Shutdown();
+            Console.ReadLine();	
 		}
 	}
 }

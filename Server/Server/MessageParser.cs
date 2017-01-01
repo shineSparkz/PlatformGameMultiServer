@@ -59,13 +59,19 @@ namespace Server.Server
 		{
 			long input = -1;
 			long clientId = -1;
+            long action = -1;
 
-			if (json.ContainsKey("input"))
+			if (json.ContainsKey("key"))
 			{
-				input = (long)json["input"];
+				input = (long)json["key"];
 			}
 
-			if (json.ContainsKey("id"))
+            if (json.ContainsKey("act"))
+            {
+                action = (long)json["act"];
+            }
+
+            if (json.ContainsKey("id"))
 			{
 				clientId = (long)json["id"];
 			}
@@ -77,7 +83,7 @@ namespace Server.Server
 			}
 
 			int playerHandle = m_ServerManager.GetPlayerHandle((int)clientId);
-			m_GameSimulation.InputUpdate(playerHandle, (int)input);
+			m_GameSimulation.InputUpdate(playerHandle, (int)input, (int)action);
 
 			return true;
 		}
@@ -113,14 +119,13 @@ namespace Server.Server
 			m_ServerManager.SetPlayerHandle(clientId, m_GameSimulation.NumObjects());
 
 			// Now add them
-			GameObject newPlayer = new GameObject(GameObjectType.Player, m_GameSimulation.NumObjects());
-			newPlayer.isClientPlayer = 1;
+			GameObject newPlayer = new GameObject(GameObjectType.Player, m_GameSimulation.NumObjects(), 1, true);
 			m_GameSimulation.AddGameObject(newPlayer);
 
 			// Create Packet to send to other clients already on server with just this player. *note* last param is set to 0 intentionally
 			PacketDefs.MultiGameObjectPacket thisClientPacket = new PacketDefs.MultiGameObjectPacket(1);
 			thisClientPacket.objects[0] = new PacketDefs.GameObjectPacket(
-				(int)newPlayer.object_id, newPlayer.unique_id, newPlayer.Position.X, newPlayer.Position.Y, 0);
+				(int)newPlayer.TypeId(), newPlayer.UnqId(), newPlayer.Position.X, newPlayer.Position.Y, 0);
 
 			// Create Packet for list of all clients now to send to new player
 			PacketDefs.MultiGameObjectPacket allClientsPacket =
@@ -130,14 +135,14 @@ namespace Server.Server
 			int i = 0;
 			foreach (GameObject p in m_GameSimulation.GetObjects())
 			{
-				if (p.object_id == GameObjectType.Player)
+				if (p.TypeId() == GameObjectType.Player)
 				{
 					allClientsPacket.objects[i] = new PacketDefs.GameObjectPacket(
-						(int)p.object_id,
-						p.unique_id,
+						(int)p.TypeId(),
+						p.UnqId(),
 						p.Position.X,
 						p.Position.Y,
-						p.isClientPlayer);
+						p.IsClient);
 
 					++i;
 				}
@@ -152,7 +157,7 @@ namespace Server.Server
 			m_ServerManager.SendTcp(client.tcpSocket, fastJSON.JSON.ToJSON(allClientsPacket, PacketDefs.JsonParams()));
 
 			// Set this back for the next new client
-			newPlayer.isClientPlayer = 0;
+			newPlayer.IsClient = 0;
 			return true;
 		}
 	}

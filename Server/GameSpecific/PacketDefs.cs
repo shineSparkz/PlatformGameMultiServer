@@ -102,15 +102,19 @@ namespace Server.GameSpecific
         public class PlayerInputUpdatePacket : basepacket
         {
             public int handle;
-            public float px;
-            public float py;
+            public float px;    // Position X
+            public float py;    // Position Y
+            public float fx;    // Frame X
+            public float fy;    // Frame Y
 
-            public PlayerInputUpdatePacket(int handle, float x, float y)
+            public PlayerInputUpdatePacket(int handle, float px, float py, float fx, float fy)
             {
 				this.name = (int)ID.OUT_UDP_UpdatedObject;
                 this.handle = handle;
-                this.px = x;
-                this.py = y;
+                this.px = px;
+                this.py = py;
+                this.fx = fx;
+                this.fy = fy;
             }
         }
 

@@ -1,9 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
-
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
@@ -23,10 +19,10 @@ namespace Server.Server
 
 		#region Member Functions
 
-		public AsynchSocketListener()
+		public AsynchSocketListener(ServerManager serverManager, GameSimulation gameSim)
 		{
-			m_ServerManager = new ServerManager();
-			m_GameSimulation = m_ServerManager.GameSim();
+            m_ServerManager = serverManager;
+            m_GameSimulation = gameSim;
 
 			m_MessageParser = new MessageParser(m_GameSimulation, m_ServerManager);
 		}

@@ -19,12 +19,11 @@ namespace Server.Server
 
 		public ServerManager()
 		{
-			m_GameSimulation = new GameSimulation(this);
 		}
 
-		public GameSimulation GameSim()
+		public void SetGameSim(GameSimulation gameSim)
 		{
-			return m_GameSimulation;
+            m_GameSimulation = gameSim;
 		}
 
 		#region Client Management
