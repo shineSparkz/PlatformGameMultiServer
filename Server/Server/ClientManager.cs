@@ -14,23 +14,38 @@ namespace Server.Server
 {
 	public class ServerManager
 	{
-		private Dictionary<Int32, GameClient> m_Clients = new Dictionary<int, GameClient>();
-		private GameSimulation m_GameSimulation = null;
+        private static ServerManager _instance;
+        public static ServerManager instance
+        {
+            get
+            {
+                if (_instance == null)
+                {
+                    _instance = new ServerManager();
+                }
+
+                return _instance;
+            }
+
+            private set {; }
+        }
+
+        private Dictionary<Int32, GameClient> m_Clients = new Dictionary<int, GameClient>();
+
 
 		public ServerManager()
 		{
 		}
 
-		public void SetGameSim(GameSimulation gameSim)
-		{
-            m_GameSimulation = gameSim;
-		}
-
 		#region Client Management
 		public int AddNewClient(Socket tcpSocket)
 		{
-			int hash = m_Clients.Count;
-			m_Clients.Add(hash, new GameClient(tcpSocket, null, null));
+            int hash = 0;
+            lock (m_Clients)
+            {
+                hash = m_Clients.Count;
+                m_Clients.Add(hash, new GameClient(tcpSocket, null, null));
+            }
 			return hash;
 		}
 
@@ -66,61 +81,74 @@ namespace Server.Server
 
 		public bool ConnectToRemoteEndPoint(int clientId, IPEndPoint remEndPt)
 		{
-			if (m_Clients[clientId].udpRemoteEndpoint == null)
-			{
-				m_Clients[clientId].udpRemoteEndpoint = remEndPt;
+            lock(m_Clients)
+            {
+                if (m_Clients[clientId].udpRemoteEndpoint == null)
+                {
+                    m_Clients[clientId].udpRemoteEndpoint = remEndPt;
 
-				if (m_Clients[clientId].udpSocket == null)
-				{
-					m_Clients[clientId].udpSocket = new UdpClient();
-					m_Clients[clientId].udpSocket.Connect(m_Clients[clientId].udpRemoteEndpoint);
+                    if (m_Clients[clientId].udpSocket == null)
+                    {
+                        m_Clients[clientId].udpSocket = new UdpClient();
+                        m_Clients[clientId].udpSocket.Connect(m_Clients[clientId].udpRemoteEndpoint);
 
-					Logger.Log(string.Format("Set up Udp connect for client with id:{0}. Clients port {1}", clientId, m_Clients[clientId].udpRemoteEndpoint.Port));
-					return true;
-				}
-				else
-				{
-					// Log
-					return false;
-				}
-			}
-			else
-			{
-				// Log
-				return false;
-			}
+                        Logger.Log(string.Format("Set up Udp connect for client with id:{0}. Clients port {1}", clientId, m_Clients[clientId].udpRemoteEndpoint.Port));
+                        return true;
+                    }
+                    else
+                    {
+                        // Log
+                        return false;
+                    }
+                }
+                else
+                {
+                    // Log
+                    return false;
+                }
+            }
 		}
 
 		public void RemoveClient(Socket tcpMatch)
 		{
-			foreach (KeyValuePair<int, GameClient> kvp in m_Clients)
-			{
-				GameClient client = kvp.Value;
+            lock(m_Clients)
+            {
+                foreach (KeyValuePair<int, GameClient> kvp in m_Clients)
+                {
+                    GameClient client = kvp.Value;
 
-				// Set to empty // TODO ::::::::
-				//GameObjects[client.playerObjectHandle].object_id = GameObjectType.Empty;
+                    // Set to empty // TODO ::::::::
+                    //GameObjects[client.playerObjectHandle].object_id = GameObjectType.Empty;
 
-				if (client.tcpSocket == tcpMatch)
-				{
-					if (client.udpSocket != null && client.udpSocket.Client.Connected)
-					{
-						client.udpSocket.Close();
-						client.tcpSocket.Close();
-					}
+                    if (client.tcpSocket == tcpMatch)
+                    {
+                        if (client.udpSocket != null && client.udpSocket.Client.Connected)
+                        {
+                            client.udpSocket.Close();
+                            client.tcpSocket.Close();
+                        }
 
-					m_Clients.Remove(kvp.Key);
-					break;
-				}
-			}
+                        m_Clients.Remove(kvp.Key);
+                        break;
+                    }
+                }
+            }
 		}
 		#endregion
 
 		#region Sending Data
 		private void UdpSendCallback(IAsyncResult ar)
 		{
-			UdpClient uc = (UdpClient)ar.AsyncState;
-			uc.EndSend(ar); // returns int of bytes sent
-		}
+            try
+            {
+                UdpClient uc = (UdpClient)ar.AsyncState;
+                uc.EndSend(ar); // returns int of bytes sent
+            }
+            catch (Exception e)
+            {
+                Logger.Log(string.Format("Handled Exception : {0} in UdpSendCallback", e.ToString()), Logger.LogPrio.Error);
+            }
+        }
 
 		private void TcpSendCallBack(IAsyncResult ar)
 		{
@@ -131,7 +159,7 @@ namespace Server.Server
 			}
 			catch (Exception e)
 			{
-				Logger.Log(string.Format("Handled Exception : ", e.ToString()), Logger.LogPrio.Error);
+				Logger.Log(string.Format("Handled Exception :{0} in TcpSendCallback ", e.ToString()), Logger.LogPrio.Error);
 			}
 		}
 
@@ -143,19 +171,32 @@ namespace Server.Server
 
 		void SendUdp(UdpClient client, string message)
 		{
-			Byte[] sendBytes = Encoding.ASCII.GetBytes(message);
-			client.BeginSend(sendBytes, sendBytes.Length,
-				new AsyncCallback(UdpSendCallback), client);
-		}
+            try
+            {
+                Byte[] sendBytes = Encoding.ASCII.GetBytes(message);
+                client.BeginSend(sendBytes, sendBytes.Length,
+                    new AsyncCallback(UdpSendCallback), client);
+            }
+            catch (Exception e)
+            {
+                Logger.Log(string.Format("Handled Exception : {0} in SendUdp(UdpClient, string)", e.ToString()), Logger.LogPrio.Error);
+            }
+        }
 
 		public void SendAllUdp(String data)
 		{
-			foreach (KeyValuePair<int, GameClient> client in m_Clients)
-			{
-				SendUdp(client.Value.udpSocket, data);
-			}
-		}
-
+            try
+            {
+                foreach (KeyValuePair<int, GameClient> client in m_Clients)
+                {
+                    SendUdp(client.Value.udpSocket, data);
+                }
+            }
+            catch (Exception e)
+            {
+                Logger.Log(string.Format("Handled Exception : {0} in SendAllUdp", e.ToString()), Logger.LogPrio.Error);
+            }
+        }
 
 		public void SendTcp(Socket handler, String data)
 		{

@@ -9,34 +9,50 @@ using System.Diagnostics;
 using Microsoft.Xna.Framework;
 
 using Server.Server;
+using Server.GameSpecific.GameObjects;
 
 
 namespace Server.GameSpecific
 {
 	public class GameSimulation
 	{
-        const float FPS = 60.0f;
-        const double DELTA_TICK = 0.1;
-        const float MAX_FRAME_SKIP = 10;
+        private static GameSimulation _instance;
+        public static GameSimulation instance
+        {
+            get
+            {
+                if (_instance == null)
+                {
+                    _instance = new GameSimulation();
+                }
 
-        const int iterations = 3;
-		const int UP = 0;
-		const int DOWN = 1;
-		const int LEFT = 2;
-		const int RIGHT = 3;
+                return _instance;
+            }
+
+            private set {; }
+        }
+
+        const float FPS = 60.0f;
+        const double DELTA_TICK = 1 / 50.0f;
+        const float MAX_FRAME_SKIP = 10;
 
         const int RELEASE = 0;
         const int PRESS = 1;
 
 		private List<GameObject> m_GameObjects = new List<GameObject>();
         private List<GameObject> m_UpdateObjects = new List<GameObject>();
-		private ServerManager m_ServerManager = null;
 		private bool m_GameLoaded = false;
         private bool m_ShouldQuit = false;
 
-		public GameSimulation(ServerManager sMan)
+        public static Random Rand = new Random(Environment.TickCount);
+
+        public static int RandomRange(int min, int max)
+        {
+            return Rand.Next(min, max);
+        }
+
+        public GameSimulation()
 		{
-			m_ServerManager = sMan;
 		}
 
 		public bool IsGameDataLoaded()
@@ -135,14 +151,16 @@ namespace Server.GameSpecific
                 {
                     velocity.X = -6.0f;
                 }
-                // Up
+                // Jump
                 else if (key == 22)
                 {
                     // Would need to check if it was grounded
-                    velocity.Y = -6.0f;
+                    if (player.Grounded)
+                    {
+                        velocity.Y = -12.0f;
+                        player.Grounded = false;
+                    }
                 }
-                // Down
-                //else if (key == 18)
             }
             else
             {
@@ -187,122 +205,18 @@ namespace Server.GameSpecific
             // Loop through game objects
             foreach (GameObject gameObj in m_UpdateObjects)
             {
-                // Is updateable but not player
-                if (gameObj.TypeId() != GameObjectType.Player)
-                {
-                    // We will send a packet to each client from updateable things such as enemies
-                    gameObj.Update();
+                // We will send a packet to each client from updateable things such as enemies
+                gameObj.Update();
 
-                    // Send out the new position update here
-                    PacketDefs.PlayerInputUpdatePacket updatePacket = new PacketDefs.PlayerInputUpdatePacket(
-                        gameObj.UnqId(), gameObj.Position.X, gameObj.Position.Y, gameObj.FrameX(), gameObj.FrameY());
+                // TODO : Maybe have a flag here to see if should bother sending a packet out
 
-                    // Send this player to all other clients
-                    m_ServerManager.SendAllUdp(fastJSON.JSON.ToJSON(
-                        updatePacket, PacketDefs.JsonParams()));
-                }
-                // Is player so more complex collision
-                else
-                {
-                    // ---- Resolve collision ----
-                    bool contactLeft = false, contactRight = false, contactYbottom = false, contactYtop = false;
+                // Send out the new position update here
+                PacketDefs.PlayerInputUpdatePacket updatePacket = new PacketDefs.PlayerInputUpdatePacket(
+                    gameObj.UnqId(), gameObj.Position.X, gameObj.Position.Y, gameObj.FrameX(), gameObj.FrameY());
 
-                    Vector2 predicted_speed = gameObj.Velocity;// * dt;
-                    float projectedMoveX, projectedMoveY, originalMoveX, originalMoveY;
-                    originalMoveX = predicted_speed.X;
-                    originalMoveY = predicted_speed.Y;
-
-                    //Vector2 position = gameObj.Position;
-
-                    foreach (GameObject colTest in m_GameObjects)
-                    {
-                        if (colTest.TypeId() == GameObjectType.Wall)
-                        {
-                            for (int dir = 0; dir < 4; dir++)
-                            {
-                                if (dir == UP && predicted_speed.Y > 0) continue;
-                                if (dir == DOWN && predicted_speed.Y < 0) continue;
-                                if (dir == LEFT && predicted_speed.X > 0) continue;
-                                if (dir == RIGHT && predicted_speed.X < 0) continue;
-
-                                projectedMoveX = (dir >= LEFT ? predicted_speed.X : 0);
-                                projectedMoveY = (dir < LEFT ? predicted_speed.Y : 0);
-
-                                while ((colTest.Bounds().Contains(gameObj.points[dir * 2].X + (int)gameObj.Position.X + (int)projectedMoveX,
-                                    gameObj.points[dir * 2].Y + (int)gameObj.Position.Y + (int)projectedMoveY)
-                                    ||
-                                    colTest.Bounds().Contains(gameObj.points[dir * 2 + 1].X + (int)gameObj.Position.X + (int)projectedMoveX,
-                                        gameObj.points[dir * 2 + 1].Y + (int)gameObj.Position.Y + (int)projectedMoveY)))
-                                {
-                                    if (dir == UP)
-                                        projectedMoveY++;
-                                    if (dir == DOWN)
-                                        projectedMoveY--;
-                                    if (dir == LEFT)
-                                        projectedMoveX++;
-                                    if (dir == RIGHT)
-                                        projectedMoveX--;
-                                }
-
-                                if (dir >= LEFT && dir <= RIGHT)
-                                    predicted_speed.X = projectedMoveX;
-                                if (dir >= UP && dir <= DOWN)
-                                    predicted_speed.Y = projectedMoveY;
-                            }
-
-                            // Resolve contact
-                            if (predicted_speed.Y > originalMoveY && originalMoveY < 0)
-                            {
-                                contactYtop = true;
-                            }
-
-                            if (predicted_speed.Y < originalMoveY && originalMoveY > 0)
-                            {
-                                contactYbottom = true;
-                            }
-
-                            if (predicted_speed.X - originalMoveX < -0.01f)
-                            {
-                                contactRight = true;
-                            }
-
-                            if (predicted_speed.X - originalMoveX > 0.01f)
-                            {
-                                contactLeft = true;
-                            }
-
-                            // Resolve collision form contact
-                            if (contactYbottom || contactYtop)
-                            {
-                                //position.Y += predicted_speed.Y;
-                                gameObj.Velocity.Y = 0;// = new Vector2(gameObj.Velocity.X, 0);
-                            }
-
-                            if (contactLeft || contactRight)
-                            {
-                                //position.X += predicted_speed.X;
-                                gameObj.Velocity.X = 0;// = new Vector2(0, gameObj.Velocity.Y);
-                            }
-                        }
-                    }
-
-                    //position += gameObj.Velocity * dt;
-                    //int x = (int)position.X;
-                    //int y = (int)position.Y;
-                    //gameObj.Position = new Vector2(x,y);
-                    gameObj.Position += gameObj.Velocity;
-
-                    // Apply the force of gravity
-                    gameObj.Velocity.Y += 0.981f;
-
-                    // Send out the new position update here
-                    PacketDefs.PlayerInputUpdatePacket updatePacket = new PacketDefs.PlayerInputUpdatePacket(
-                        gameObj.UnqId(), gameObj.Position.X, gameObj.Position.Y, gameObj.FrameX(), gameObj.FrameY());   
-
-                    // Send this player to all other clients
-                    m_ServerManager.SendAllUdp(fastJSON.JSON.ToJSON(
-                        updatePacket, PacketDefs.JsonParams()));
-                }
+                // Send this player to all other clients
+                ServerManager.instance.SendAllUdp(fastJSON.JSON.ToJSON(
+                    updatePacket, PacketDefs.JsonParams()));
             }
         }
 

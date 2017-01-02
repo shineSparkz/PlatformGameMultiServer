@@ -86,6 +86,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="GameSpecific\GameObjects\BlueMinionEnemy.cs" />
+    <Compile Include="GameSpecific\GameObjects\Player.cs" />
     <Compile Include="GameSpecific\GameSimulation.cs" />
     <Compile Include="Server\AsynchSocketListener.cs" />
     <Compile Include="Server\ClientManager.cs" />

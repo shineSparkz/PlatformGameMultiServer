@@ -6,6 +6,9 @@ using System.Threading.Tasks;
 
 using Server.Utils;
 using Server.GameSpecific;
+using Server.GameSpecific.GameObjects;
+
+using Microsoft.Xna.Framework;
 
 namespace Server.Server
 {
@@ -118,8 +121,8 @@ namespace Server.Server
 			// We want to add them to the level and send them the level
 			m_ServerManager.SetPlayerHandle(clientId, m_GameSimulation.NumObjects());
 
-			// Now add them
-			GameObject newPlayer = new GameObject(GameObjectType.Player, m_GameSimulation.NumObjects(), 1, true);
+			// Now add them **** TODO Need position
+			GameObject newPlayer = new Player(Vector2.Zero, GameObjectType.Player, m_GameSimulation.NumObjects(), 1, true);
 			m_GameSimulation.AddGameObject(newPlayer);
 
 			// Create Packet to send to other clients already on server with just this player. *note* last param is set to 0 intentionally
