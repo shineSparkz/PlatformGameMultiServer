@@ -17,6 +17,8 @@ namespace Server.Server
 		public IPEndPoint udpRemoteEndpoint = null;
 		public int udpLocalPort;
 		public int playerObjectHandle;
+        public bool loggedIn = false;
+        public bool inGame = false;     // TODO ** reset this when we handle finishing levels or returning to lobby
 
 		public GameClient(Socket tcp, UdpClient udp, IPEndPoint ep)
 		{

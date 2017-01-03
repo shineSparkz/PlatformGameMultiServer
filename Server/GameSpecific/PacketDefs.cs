@@ -11,13 +11,16 @@ namespace Server.GameSpecific
 		public enum ID
 		{
 			// TCP out
-			OUT_TCP_Register,
-			OUT_TCP_NewPlayerObject,
+			OUT_TCP_Connect,
+            OUT_TCP_ServerMsg,
+			OUT_TCP_StartGame,
 
 			// UDP out
 			OUT_UDP_UpdatedObject,
 
 			// TCP in
+            IN_TCP_CreateAccount,
+            IN_TCP_Login,
 			IN_TCP_StartGame,
 
 			// UDP oin
@@ -69,31 +72,42 @@ namespace Server.GameSpecific
 		}
 
 		[Serializable()]
-		public class regPacket : basepacket
+		public class connectPacket : basepacket
 		{
 			public int clientId { get; set; }
 			public int udpPort { get; set; }
 
-			public regPacket()
+			public connectPacket(int clientId, int udpPort)
 			{
-			}
-
-			public regPacket(int clientId, int udpPort)
-			{
-				this.name = (int)ID.OUT_TCP_Register;
+				this.name = (int)ID.OUT_TCP_Connect;
 				this.clientId = clientId;
 				this.udpPort = udpPort;
 			}
 		}
 
+        // --- This can be used for alerts and messages----
+        [Serializable()]
+        public class msgPacket : basepacket
+        {
+            public bool success = true;
+            public string msg = "";
+
+            public msgPacket()
+            {
+                this.name = (int)ID.OUT_TCP_ServerMsg; ;
+            }
+        }
+
+
         [Serializable()]
         public class MultiGameObjectPacket : basepacket
         {
             public GameObjectPacket[] objects = null;
+            public bool loadLevel = false;
 
             public MultiGameObjectPacket(int numClients)
             {
-				this.name = (int)ID.OUT_TCP_NewPlayerObject;
+				this.name = (int)ID.OUT_TCP_StartGame;
                 this.objects = new GameObjectPacket[numClients];
             }
         }

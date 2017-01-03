@@ -12,8 +12,8 @@ using Server.GameSpecific;
 
 namespace Server.Server
 {
-	public class ServerManager
-	{
+    public class ServerManager
+    {
         private static ServerManager _instance;
         public static ServerManager instance
         {
@@ -30,15 +30,80 @@ namespace Server.Server
             private set {; }
         }
 
+        // TODO : We need sets of these for each game
         private Dictionary<Int32, GameClient> m_Clients = new Dictionary<int, GameClient>();
 
+        // TODO : This will be a database
+        private List<string> UserAccounts = new List<string>();
 
-		public ServerManager()
-		{
-		}
+        public ServerManager()
+        {
+        }
 
-		#region Client Management
-		public int AddNewClient(Socket tcpSocket)
+        #region AccountManagement
+        public string AddNewUserToDatabase(string userName, int clientId)
+        {
+            if (UserExistsInDatabase(userName))
+            {
+                string err = string.Format("Error: User {0} already exists", userName);
+                Logger.Log(err, Logger.LogPrio.Error);
+                return err;
+            }
+
+            if (!ClientExists(clientId))
+            {
+                string err = string.Format("Error unknown client id: {0}", clientId);
+                Logger.Log(err, Logger.LogPrio.Error);
+                return err;
+            }
+
+            UserAccounts.Add(userName);
+
+            string s = string.Format("User account created for {0}", userName);
+            return s;
+        }
+
+        public string Login(string userName, int clientId, out bool success)
+        {
+            if (!UserExistsInDatabase(userName))
+            {
+                string err = string.Format("Error: user {0} does not exist", userName);
+                Logger.Log(err, Logger.LogPrio.Error);
+                success = false;
+                return err;
+            }
+
+            if (!ClientExists(clientId))
+            {
+                string err = string.Format("Tried to create account with unknown client id: {0}", clientId);
+                Logger.Log(err, Logger.LogPrio.Error);
+                success = false;
+                return err;
+            }
+
+
+            m_Clients[clientId].loggedIn = true;
+
+            string s = string.Format("Client {0} is now logged in and ready to play", userName);
+            Logger.Log(s);
+            success = true;
+            return s;
+        }
+
+        private bool UserExistsInDatabase(string userName)
+        {
+            foreach (string name in UserAccounts)
+            {
+                if (name == userName)
+                    return true;
+            }
+
+            return false;
+        }
+        #endregion
+
+        #region Client Management
+        public int AddNewClient(Socket tcpSocket)
 		{
             int hash = 0;
             lock (m_Clients)
@@ -63,6 +128,11 @@ namespace Server.Server
 		{
 			return m_Clients[id];
 		}
+
+        public Dictionary<int, GameClient> GetClients()
+        {
+            return m_Clients;
+        }
 
 		public void SetLocalUdpPort(int clientId, int port)
 		{
@@ -164,11 +234,6 @@ namespace Server.Server
 		}
 
 
-		public void SendUdp(int clientId, string msg)
-		{
-			SendUdp(m_Clients[clientId].udpSocket, msg);
-		}
-
 		void SendUdp(UdpClient client, string message)
 		{
             try
@@ -183,7 +248,12 @@ namespace Server.Server
             }
         }
 
-		public void SendAllUdp(String data)
+        public void SendUdp(int clientId, string msg)
+		{
+			SendUdp(m_Clients[clientId].udpSocket, msg);
+		}
+
+        public void SendAllUdp(String data)
 		{
             try
             {
@@ -206,12 +276,6 @@ namespace Server.Server
 				new AsyncCallback(TcpSendCallBack), handler);
 		}
 
-		public void SendTcp_Bin(Socket handler, byte[] packet)
-		{
-			handler.BeginSend(packet, 0, packet.Length, 0,
-				new AsyncCallback(TcpSendCallBack), handler);
-		}
-
 		public void SendAllTcp(String data)
 		{
 			foreach (KeyValuePair<int, GameClient> kvp in m_Clients)
@@ -220,12 +284,15 @@ namespace Server.Server
 			}
 		}
 
-		public void SendAllTcpExcept(String data, int ignore)
+		public void SendAllTcpExcept(String data, int ignore, bool checkLoggedIn = false)
 		{
 			foreach (KeyValuePair<int, GameClient> kvp in m_Clients)
 			{
-				if (kvp.Key != ignore)
-					SendTcp(kvp.Value.tcpSocket, data);
+                if (kvp.Key != ignore)
+                {
+                     if((checkLoggedIn && kvp.Value.loggedIn) || !checkLoggedIn)
+                        SendTcp(kvp.Value.tcpSocket, data);
+                }
 			}
 		}
 		#endregion

@@ -88,7 +88,7 @@ namespace Server.Server
 			m_ServerManager.SetLocalUdpPort(hash, port);
 
 			// **Important -- SEND Register Function and give them their id which they must store, and use in all packets so we know who they are, also send them local udp port that we are listening for them on.
-			m_ServerManager.SendTcp(tcpStateObj.tcpSocket, fastJSON.JSON.ToJSON(new PacketDefs.regPacket(hash, port), PacketDefs.JsonParams()));
+			m_ServerManager.SendTcp(tcpStateObj.tcpSocket, fastJSON.JSON.ToJSON(new PacketDefs.connectPacket(hash, port), PacketDefs.JsonParams()));
 
 			// ---- Begin Async Tcp receive for this client
 			tcpStateObj.tcpSocket.BeginReceive(tcpStateObj.buffer, 0,                                     

@@ -11,3 +11,4 @@ E:\Documents\uni\year_3\multiplayer\PlatformGameMultiServer\fastJSON\bin\Release
 E:\Documents\uni\year_3\multiplayer\PlatformGameMultiServer\fastJSON\obj\Release\fastJSON.csprojResolveAssemblyReference.cache
 E:\Documents\uni\year_3\multiplayer\PlatformGameMultiServer\fastJSON\obj\Release\fastJSON.dll
 E:\Documents\uni\year_3\multiplayer\PlatformGameMultiServer\fastJSON\obj\Release\fastJSON.pdb
+C:\DocumentsC\university\year3\multi\DemonGame\PlatformGameMultiServer\fastJSON\obj\Release\fastJSON.csprojResolveAssemblyReference.cache
