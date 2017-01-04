@@ -68,6 +68,7 @@ namespace Server.Server
 
             // Data to extract form this packet
             string name = "";
+            string password = "";
             int clientId = -1;
 
             // Extract the id of the sender
@@ -86,9 +87,26 @@ namespace Server.Server
                 name = (string)json["userName"];
             }
 
+            if (json.ContainsKey("password"))
+            {
+                password = (string)json["password"];
+            }
+
             // Send Packet with the return value of AddnewUserToDatabase as the argument for success
             PacketDefs.msgPacket returnPack = new PacketDefs.msgPacket();
-            returnPack.msg = ServerManager.instance.AddNewUserToDatabase(name, clientId);
+
+            if (string.IsNullOrEmpty(name))
+            {
+                returnPack.msg = "Error: Name is null or empty";
+            }
+            else if (string.IsNullOrEmpty(password))
+            {
+                returnPack.msg = "Error: Password is null or empty";
+            }
+            else
+            {
+                returnPack.msg = ServerManager.instance.AddNewClientToDatabase(clientId, name, password);
+            }
 
             ServerManager.instance.SendTcp(ServerManager.instance.GetClient(clientId).tcpSocket, fastJSON.JSON.ToJSON(returnPack, PacketDefs.JsonParams()));
 
@@ -101,6 +119,7 @@ namespace Server.Server
 
             // Data to extract form this packet
             string name = "";
+            string password = "";
             int clientId = -1;
 
             // Extract the id of the sender
@@ -119,9 +138,31 @@ namespace Server.Server
                 name = (string)json["userName"];
             }
 
+            if (json.ContainsKey("password"))
+            {
+                password = (string)json["password"];
+            }
+
             // Send Packet with the return value of AddnewUserToDatabase as the argument for success
             PacketDefs.msgPacket returnPack = new PacketDefs.msgPacket();
-            returnPack.msg = ServerManager.instance.Login(name, clientId, out returnPack.success);
+
+            // Check this first as it's quicker than hitting database
+            if (!ServerManager.instance.ClientExists(clientId))
+            {
+                string err = string.Format("Tried to create account with unknown client id: {0}", clientId);
+                Logger.Log(err, Logger.LogPrio.Error);
+                returnPack.success = false;
+                returnPack.msg = err;
+            }
+            else if (ServerManager.instance.GetClient(clientId).loggedIn)
+            {
+                returnPack.success = false;
+                returnPack.msg = "You are already logged in";
+            }
+            else
+            {
+                returnPack.msg = ServerManager.instance.Login(name, password, clientId, out returnPack.success);
+            }
 
             ServerManager.instance.SendTcp(ServerManager.instance.GetClient(clientId).tcpSocket, fastJSON.JSON.ToJSON(returnPack, PacketDefs.JsonParams()));
 

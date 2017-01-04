@@ -3,9 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-
 using System.Net;
 using System.Net.Sockets;
+using System.Data.SQLite;
+using System.IO;
 
 using Server.Utils;
 using Server.GameSpecific;
@@ -33,17 +34,76 @@ namespace Server.Server
         // TODO : We need sets of these for each game
         private Dictionary<Int32, GameClient> m_Clients = new Dictionary<int, GameClient>();
 
-        // TODO : This will be a database
-        private List<string> UserAccounts = new List<string>();
+        private SQLiteConnection m_Database = null;
 
         public ServerManager()
         {
+            this.CreateOrOpenDatabase();
         }
 
         #region AccountManagement
-        public string AddNewUserToDatabase(string userName, int clientId)
+        private void CreateOrOpenDatabase()
         {
-            if (UserExistsInDatabase(userName))
+            if (!File.Exists("PlayerDB.sqlite"))
+            {
+                Console.WriteLine("Creating new database");
+
+                SQLiteConnection.CreateFile("PlayerDB.sqlite");
+
+                m_Database = new SQLiteConnection("Data Source=PlayerDB.sqlite;Version=3;");
+                m_Database.Open();
+
+                // Create the table that will work with on the server
+                string db_players = "CREATE TABLE t_Players (name VARCHAR(20), password VARCHAR(10), exp INT)";
+                SQLiteCommand sqlCmd = new SQLiteCommand(db_players, m_Database);
+                sqlCmd.ExecuteNonQuery();
+            }
+            else
+            {
+                Console.WriteLine("Opening existing database");
+
+                // Just open it if it's already created
+                m_Database = new SQLiteConnection("Data Source=PlayerDB.sqlite;Version=3;");
+                m_Database.Open();
+            }
+
+            // TODO : Test, can remove this
+            PrintLeaderBoard();
+        }
+
+        private bool CheckClientInDatabase(string name)
+        {
+            string sqlQueery = "SELECT * FROM [t_Players] order by [exp] desc";
+            SQLiteCommand qryCmd = new SQLiteCommand(sqlQueery, m_Database);
+
+            SQLiteDataReader reader = qryCmd.ExecuteReader();
+            while (reader.Read())
+            {
+                if (name == (string)reader["name"])
+                    return true;
+            }
+
+            return false;
+        }
+
+        private bool CheckClientAndPasswordMatch(string name, string pw) // OR LOGIN
+        {
+            string sqlQueery = "SELECT * FROM [t_Players] order by [exp] desc";
+            SQLiteCommand qryCmd = new SQLiteCommand(sqlQueery, m_Database);
+
+            SQLiteDataReader reader = qryCmd.ExecuteReader();
+            while (reader.Read())
+            {
+                if (name == (string)reader["name"] && pw == (string)reader["password"])
+                    return true;
+            }
+
+            return false;
+        }
+
+        public string AddNewClientToDatabase(int clientId, string userName, string pw)
+        {
+            if (CheckClientInDatabase(userName))
             {
                 string err = string.Format("Error: User {0} already exists", userName);
                 Logger.Log(err, Logger.LogPrio.Error);
@@ -57,30 +117,23 @@ namespace Server.Server
                 return err;
             }
 
-            UserAccounts.Add(userName);
+            string insert = string.Format("INSERT into [t_Players] (name, password, exp) values ('{0}', '{1}', 0)", userName, pw);
+            SQLiteCommand sqlInsCmd = new SQLiteCommand(insert, m_Database);
+            sqlInsCmd.ExecuteNonQuery();
 
             string s = string.Format("User account created for {0}", userName);
             return s;
         }
 
-        public string Login(string userName, int clientId, out bool success)
+        public string Login(string userName, string password, int clientId, out bool success)
         {
-            if (!UserExistsInDatabase(userName))
+            if (!CheckClientAndPasswordMatch(userName, password))
             {
                 string err = string.Format("Error: user {0} does not exist", userName);
                 Logger.Log(err, Logger.LogPrio.Error);
                 success = false;
                 return err;
             }
-
-            if (!ClientExists(clientId))
-            {
-                string err = string.Format("Tried to create account with unknown client id: {0}", clientId);
-                Logger.Log(err, Logger.LogPrio.Error);
-                success = false;
-                return err;
-            }
-
 
             m_Clients[clientId].loggedIn = true;
 
@@ -90,15 +143,21 @@ namespace Server.Server
             return s;
         }
 
-        private bool UserExistsInDatabase(string userName)
+        public void UpdateClientExpDB(string name, int amount)
         {
-            foreach (string name in UserAccounts)
-            {
-                if (name == userName)
-                    return true;
-            }
+            string update = string.Format("UPDATE [t_Players] set [exp] = '{0}' where [name] = '{1}'", amount, name);
+            SQLiteCommand cmd = new SQLiteCommand(update, m_Database);
+            cmd.ExecuteNonQuery();
+        }
 
-            return false;
+        public void PrintLeaderBoard()
+        {
+            string sqlQueery = "select * from t_Players order by exp desc";
+            SQLiteCommand qryCmd = new SQLiteCommand(sqlQueery, m_Database);
+
+            SQLiteDataReader reader = qryCmd.ExecuteReader();
+            while (reader.Read())
+                Console.WriteLine("Name: " + reader["name"] + "\tExp: " + reader["exp"]);
         }
         #endregion
 

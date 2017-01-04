@@ -76,6 +76,10 @@
     <Reference Include="Microsoft.Xna.Framework, Version=4.0.0.0, Culture=neutral, PublicKeyToken=842cf8be1de50553, processorArchitecture=x86" />
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Data.SQLite, Version=1.0.104.0, Culture=neutral, PublicKeyToken=db937bc2d44ff139, processorArchitecture=x86">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\sqlite\System.Data.SQLite.dll</HintPath>
+    </Reference>
     <Reference Include="System.Drawing" />
     <Reference Include="System.Windows" />
     <Reference Include="System.Xml.Linq" />
@@ -90,7 +94,7 @@
     <Compile Include="GameSpecific\GameObjects\Player.cs" />
     <Compile Include="GameSpecific\GameSimulation.cs" />
     <Compile Include="Server\AsynchSocketListener.cs" />
-    <Compile Include="Server\ClientManager.cs" />
+    <Compile Include="Server\ServerManager.cs" />
     <Compile Include="Server\GameClient.cs" />
     <Compile Include="GameSpecific\GameObject.cs" />
     <Compile Include="Server\MessageParser.cs" />
