@@ -30,6 +30,7 @@ namespace Server.Server
             MessageFunctions[PacketDefs.ID.IN_TCP_CreateAccount] = CreateAccountMsg;
             MessageFunctions[PacketDefs.ID.IN_TCP_Login] = UserLoginMsg;
             MessageFunctions[PacketDefs.ID.IN_TCP_StartGame] = StartGameMsg;
+			MessageFunctions[PacketDefs.ID.IN_TCP_ExpQueery] = ExpQueeryMsg;
 		}
 
 		public void ParseMessage(string msg)
@@ -164,13 +165,57 @@ namespace Server.Server
                 returnPack.msg = ServerManager.instance.Login(name, password, clientId, out returnPack.success);
             }
 
-            ServerManager.instance.SendTcp(ServerManager.instance.GetClient(clientId).tcpSocket, fastJSON.JSON.ToJSON(returnPack, PacketDefs.JsonParams()));
+			// Send the info as udp
+			ServerManager.instance.SendUdp(clientId, fastJSON.JSON.ToJSON(returnPack, PacketDefs.JsonParams()));
+
+			// Send them an exp update
+			PacketDefs.UpdateExpPacket flp = new PacketDefs.UpdateExpPacket(ServerManager.instance.GetClientExp(name), PacketDefs.ID.OUT_TCP_ExpQueery);
+			ServerManager.instance.SendTcp(ServerManager.instance.GetClient(clientId).tcpSocket, fastJSON.JSON.ToJSON(flp, PacketDefs.JsonParams()));
+            //ServerManager.instance.SendTcp(ServerManager.instance.GetClient(clientId).tcpSocket, fastJSON.JSON.ToJSON(returnPack, PacketDefs.JsonParams()));
 
             return true;
         }
 
-        private bool StartGameMsg(Dictionary<string, object> json)
+		private bool ExpQueeryMsg(Dictionary<string, object> json)
 		{
+			// Just send them back the request
+			int clientId = -1;
+			if (json.ContainsKey("id"))
+			{
+				clientId = (int)((long)json["id"]);
+			}
+
+			GameClient client = ServerManager.instance.GetClient(clientId);
+
+			if (client != null)
+			{
+				PacketDefs.UpdateExpPacket flp = new PacketDefs.UpdateExpPacket(ServerManager.instance.GetClientExp(client.userName), PacketDefs.ID.OUT_TCP_ExpQueery);
+				ServerManager.instance.SendTcp(ServerManager.instance.GetClient(clientId).tcpSocket, fastJSON.JSON.ToJSON(flp, PacketDefs.JsonParams()));
+				return true;
+			}
+
+			return false;
+		}
+
+		private bool StartGameMsg(Dictionary<string, object> json)
+		{
+			// This is complicated so will do my best to comment, even for myself in the future
+			// There are 4 players allowed to drop in/out per game, this tries to cover all possible scenarios that I could think of
+
+			/*
+			 * There are a number of different conditionns that need to be considered
+			 * - The player needs to have an account and be logged in to start a game
+			 * - If the above conditions are not met, he will simply get an error message explainig why
+			 * - This may be the first play that starts the game, if so the level will be constructed, he will be sent a packet for info on his playe
+			 * - If there are already clients online, then they need to know about this new player who has joined, and he needs to know about himself and them
+			 * - Next... need to consider the fact that the other clients on the server are in game or not, if they are not in a game, and in the lobby then they
+			 *   do NOT need to know about this new player until they have started their own game
+			 * - If all players reach the exit, then the game simulation is cleared from memory
+			 * - Up to 4 players can join the same game at any time, and the game session is considered over when all players have either reached the goal or quit out
+			 * - In an edge case situation.... two players start a game >> player 1 finished level and goes back to lobby >> player 2 is still playing >> player 1 can re-enter 
+			 *   using the same internal game object, the player count will still  be incremented as this could go on forever otherwise
+			*/
+
 			int clientId = -1;
 
 			// Extract the id of the sender
@@ -190,87 +235,147 @@ namespace Server.Server
 				return false;
 			}
 
-            // Check that this client is logged in 
-            if (Server.ServerManager.instance.GetClient(clientId).loggedIn == false)
-            {
-                PacketDefs.msgPacket returnPack = new PacketDefs.msgPacket();
-                returnPack.msg = "Error: not logged in";
-                returnPack.success = false;
-                ServerManager.instance.SendTcp(ServerManager.instance.GetClient(clientId).tcpSocket, fastJSON.JSON.ToJSON(returnPack, PacketDefs.JsonParams()));
-                return false;
-            }
-            else
-            {
-                // Create Level data if no clients (THIS WILL ALL BE MOVED LATER)
-                if (!m_GameSimulation.IsGameDataLoaded())
-                {
-                    m_GameSimulation.LoadLevel(0);
-                }
+			// Client must be logged in!!
+			if (Server.ServerManager.instance.GetClient(clientId).loggedIn == false)
+			{
+				PacketDefs.msgPacket returnPack = new PacketDefs.msgPacket();
+				returnPack.msg = "Error: not logged in";
+				returnPack.success = false;
+				ServerManager.instance.SendTcp(ServerManager.instance.GetClient(clientId).tcpSocket, fastJSON.JSON.ToJSON(returnPack, PacketDefs.JsonParams()));
+				return false;
+			}
+			// Game must not be full !!
+			else if (m_GameSimulation.GetPlayersInGame() >= 4)
+			{
+				PacketDefs.msgPacket returnPack = new PacketDefs.msgPacket();
+				returnPack.msg = "Game is full please wait";
+				returnPack.success = false;
+				ServerManager.instance.SendTcp(ServerManager.instance.GetClient(clientId).tcpSocket, fastJSON.JSON.ToJSON(returnPack, PacketDefs.JsonParams()));
+				return false;
+			}
+			else
+			{
+				// This is first client so load level data
+				if (!m_GameSimulation.IsGameDataLoaded())
+				{
+					m_GameSimulation.LoadLevel(0);
+				}
 
-                // We want to add them to the level and send them the level
-                m_ServerManager.SetPlayerHandle(clientId, m_GameSimulation.NumObjects());
+				GameClient thisClient = ServerManager.instance.GetClient(clientId);
 
-                // Now add them **** TODO Need position
-                GameObject newPlayer = new Player(Vector2.Zero, GameObjectType.Player, m_GameSimulation.NumObjects(), 1, true, clientId);
-                m_GameSimulation.AddGameObject(newPlayer);
+				// Check if he is re-entering the same game
+				if (thisClient.playerObjectHandle > -1)
+				{
+					// Do we have a match
+					foreach (GameObject go in GameSimulation.instance.GetPlayers())
+					{
+						if (go.UnqId() == thisClient.playerObjectHandle && go.Active == false)
+						{
+							// The players already on will get an update to activate this in next tick
+							go.Active = true;
 
-                // Create Packet to send to other clients already on server with just this player. *note* last param is set to 0 intentionally
-                PacketDefs.MultiGameObjectPacket thisClientPacket = new PacketDefs.MultiGameObjectPacket(1);
-                thisClientPacket.objects[0] = new PacketDefs.GameObjectPacket(
-                    (int)newPlayer.TypeId(), newPlayer.UnqId(), newPlayer.Position.X, newPlayer.Position.Y, 0);
-                thisClientPacket.loadLevel = false;
+							// Increment counter
+							GameSimulation.instance.AddNewPlayerToSession();
+						}
+					}
+				}
+				// Weird edge case: Previous client quit, but we still have a re-useable game object in memory so give him that
+				else if (GameSimulation.instance.GetPlayers().Count == ServerManager.instance.NumClients())
+				{
+					foreach (GameObject go in GameSimulation.instance.GetPlayers())
+					{
+						if (go.Active == false)
+						{
+							// The players already on will get an update to activate this in next tick
+							go.Active = true;
 
-                // Create Packet for list of all clients now to send to new player
-                PacketDefs.MultiGameObjectPacket allClientsPacket =
-                    new PacketDefs.MultiGameObjectPacket(m_ServerManager.NumClients());
-                allClientsPacket.loadLevel = true;
+							// Increment counter
+							GameSimulation.instance.AddNewPlayerToSession();
 
-                // Fill it with data
-                int i = 0;
-                foreach (GameObject p in m_GameSimulation.GetObjects())
-                {
-                    if (p.TypeId() == GameObjectType.Player)
-                    {
-                        allClientsPacket.objects[i] = new PacketDefs.GameObjectPacket(
-                            (int)p.TypeId(),
-                            p.UnqId(),
-                            p.Position.X,
-                            p.Position.Y,
-                            p.IsClient);
+							// Set the internal memoory handle store in client data
+							m_ServerManager.SetPlayerHandle(clientId, go.UnqId());
 
-                        ++i;
-                    }
-                }
+							go.IsClient = 1;
+						}
+					}
+				}
+				else
+				{
+					// This client is new to this game
 
-                GameClient client = m_ServerManager.GetClient(clientId);
-                client.inGame = true;   // Prevents duplicates
+					// Set the internal memoory handle store in client data
+					m_ServerManager.SetPlayerHandle(clientId, m_GameSimulation.NumObjects());
 
-                // Add to packet the level to load: the client then loads in the geometry data locally
-                // Add to packet whether the client should switch to game now
+					// Add new client to game sim
+					GameObject newPlayer = new Player(Vector2.Zero, GameObjectType.Player, m_GameSimulation.NumObjects(), 1, true, clientId);
+					m_GameSimulation.AddGameObject(newPlayer);
 
-                // 1 - Send any clients on the server the new one that has been added
-                string data = fastJSON.JSON.ToJSON(thisClientPacket, PacketDefs.JsonParams());
-                foreach (KeyValuePair<int, GameClient> kvp in ServerManager.instance.GetClients())
-                {
-                    // Make sure it is not this client: He is included in the all clients packet and doesnt need to know
-                    // Make sure they are logged : Because they need to be
-                    // Make sure they are in game: Because they will get duplicates when they call this function otherwise
+					// Create Packet of one game object (this player) to send to other clients already on server with just this player. *note* last param (isClient) is set to 0 intentionally
+					PacketDefs.MultiGameObjectPacket thisClientPacket = new PacketDefs.MultiGameObjectPacket(1);
+					thisClientPacket.objects[0] = new PacketDefs.GameObjectPacket(
+						(int)newPlayer.TypeId(), newPlayer.UnqId(), newPlayer.Position.X, newPlayer.Position.Y, 0);
 
-                    // This basically allows controls over the different stages, handles whether we are logged in or not and allows 
-                    // to drop in the game at any time
-                    if (kvp.Key != clientId && kvp.Value.loggedIn && kvp.Value.inGame)
-                    {
-                        ServerManager.instance.SendTcp(kvp.Value.tcpSocket, data);
-                    }
-                }
+					// This flag signifies if we actually need to  load the level,m because the other client is either in game or lobby then we don't want this
+					thisClientPacket.loadLevel = false;
 
-                // 2 - Send the new client his own player details and the other players in the game
-                m_ServerManager.SendTcp(client.tcpSocket, fastJSON.JSON.ToJSON(allClientsPacket, PacketDefs.JsonParams()));
+					// 1 - Send any clients on the server the new one that has been added
+					string data = fastJSON.JSON.ToJSON(thisClientPacket, PacketDefs.JsonParams());
+					foreach (KeyValuePair<int, GameClient> kvp in ServerManager.instance.GetClients())
+					{
+						// - Make sure it is not this client: He is included in the all clients packet and doesnt need to know
+						// - Make sure they are logged : Because they need to be
+						// - Make sure they are in game: Because they will get duplicates when they call this function otherwise
 
-                // Set this back for the next new client
-                newPlayer.IsClient = 0;
-                return true;
-            }
+						// This basically allows controls over the different stages, handles whether we are logged in or not and allows 
+						// to drop in the game at any time
+						if (kvp.Key != clientId && kvp.Value.loggedIn && kvp.Value.inGame)
+						{
+							ServerManager.instance.SendTcp(kvp.Value.tcpSocket, data);
+						}
+					}
+
+					// Set this back , so that the next client will have this as 0, as  they are the client and need the handle
+					//newPlayer.IsClient = 0;
+				}
+
+
+				// Create Packet for list of all clients now to send to new player including himself
+				PacketDefs.MultiGameObjectPacket allClientsPacket =
+					new PacketDefs.MultiGameObjectPacket(m_ServerManager.NumClients());
+				allClientsPacket.loadLevel = true;
+
+				// Fill it with data
+				int i = 0;
+				foreach (GameObject p in m_GameSimulation.GetObjects())
+				{
+					if (p.TypeId() == GameObjectType.Player)
+					{
+						allClientsPacket.objects[i] = new PacketDefs.GameObjectPacket(
+							(int)p.TypeId(),
+							p.UnqId(),
+							p.Position.X,
+							p.Position.Y,
+							p.IsClient
+						);
+
+						++i;
+					}
+				}
+
+				// Prevents duplicates
+				thisClient.inGame = true;   
+
+				// 2 - Send the new client his own player details and the other players in the game
+				m_ServerManager.SendTcp(thisClient.tcpSocket, fastJSON.JSON.ToJSON(allClientsPacket, PacketDefs.JsonParams()));
+
+				// Set all players 'isClient' flag to null now that packets are sent
+				foreach (GameObject player in GameSimulation.instance.GetPlayers())
+				{
+					player.IsClient = 0;
+				}
+
+				return true;
+			}
 		}
 
 		private bool InputMsg(Dictionary<string, object> json)

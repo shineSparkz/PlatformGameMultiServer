@@ -11,14 +11,17 @@ namespace Server.Server
 {
 	public class GameClient
 	{
+		// Net stuff
 		public Socket tcpSocket = null;
 		public UdpClient udpSocket = null;
-
 		public IPEndPoint udpRemoteEndpoint = null;
 		public int udpLocalPort;
-		public int playerObjectHandle;
-        public bool loggedIn = false;
+
+		// Game specific
+		public bool loggedIn = false;
         public bool inGame = false;     // TODO ** reset this when we handle finishing levels or returning to lobby
+		public int playerObjectHandle = -1;
+		public string userName = "";
 
 		public GameClient(Socket tcp, UdpClient udp, IPEndPoint ep)
 		{

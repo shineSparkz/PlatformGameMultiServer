@@ -14,6 +14,8 @@ namespace Server.GameSpecific
 			OUT_TCP_Connect,
             OUT_TCP_ServerMsg,
 			OUT_TCP_StartGame,
+			OUT_TCP_FinishLevel,
+			OUT_TCP_ExpQueery,
 
 			// UDP out
 			OUT_UDP_UpdatedObject,
@@ -23,6 +25,7 @@ namespace Server.GameSpecific
             IN_TCP_CreateAccount,
             IN_TCP_Login,
 			IN_TCP_StartGame,
+			IN_TCP_ExpQueery,
 
 			// UDP oin
 			IN_UDP_Input,
@@ -121,8 +124,9 @@ namespace Server.GameSpecific
             public float py;    // Position Y
             public float fx;    // Frame X
             public float fy;    // Frame Y
+			public bool active;
 
-            public PlayerInputUpdatePacket(int handle, float px, float py, float fx, float fy)
+            public PlayerInputUpdatePacket(int handle, float px, float py, float fx, float fy, bool active)
             {
 				this.name = (int)ID.OUT_UDP_UpdatedObject;
                 this.handle = handle;
@@ -130,6 +134,7 @@ namespace Server.GameSpecific
                 this.py = py;
                 this.fx = fx;
                 this.fy = fy;
+				this.active = active;
             }
         }
 
@@ -145,6 +150,17 @@ namespace Server.GameSpecific
                 this.py = y;
             }
         }
+
+		[Serializable()]
+		public class UpdateExpPacket : basepacket
+		{
+			public int exp;
+			public UpdateExpPacket(int exp, ID packetID)
+			{
+				this.name = (int)packetID;
+				this.exp = exp;
+			}
+		}
 
         #endregion
     }

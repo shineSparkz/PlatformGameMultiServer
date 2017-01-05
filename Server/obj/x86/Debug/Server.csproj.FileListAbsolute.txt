@@ -27,3 +27,4 @@ E:\Documents\uni\year_3\multiplayer\PlatformGameMultiServer\Server\bin\x86\Debug
 E:\Documents\uni\year_3\multiplayer\PlatformGameMultiServer\Server\bin\x86\Debug\Microsoft.Xna.Framework.xml
 E:\Documents\uni\year_3\multiplayer\PlatformGameMultiServer\Server\obj\x86\Debug\Server.csprojResolveAssemblyReference.cache
 C:\DocumentsC\university\year3\multi\DemonGame\PlatformGameMultiServer\Server\bin\x86\Debug\System.Data.SQLite.dll
+E:\Documents\uni\year_3\multiplayer\PlatformGameMultiServer\Server\bin\x86\Debug\System.Data.SQLite.dll

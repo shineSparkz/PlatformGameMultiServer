@@ -48,7 +48,7 @@ namespace Server.GameSpecific
 
             // TODO: Send packet of this calculated view centre
             PacketDefs.ViewUpdatePacket vp = new PacketDefs.ViewUpdatePacket(ViewPosition.X, ViewPosition.Y);
-            ServerManager.instance.SendUdp(ServerManager.instance.GetClient(clientId).udpSocket, fastJSON.JSON.ToJSON(vp, PacketDefs.JsonParams()));
+            ServerManager.instance.SendUdp(clientId, fastJSON.JSON.ToJSON(vp, PacketDefs.JsonParams()));
         }
     }
 }

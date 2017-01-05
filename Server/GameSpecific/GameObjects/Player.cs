@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-
 using Microsoft.Xna.Framework;
 
+using Server.Server;
 
 namespace Server.GameSpecific.GameObjects
 {
@@ -33,7 +33,6 @@ namespace Server.GameSpecific.GameObjects
 
         public override void Update()
         {
-
             CheckCollisions();
             //position += gameObj.Velocity * dt;
             //int x = (int)position.X;
@@ -66,81 +65,114 @@ namespace Server.GameSpecific.GameObjects
 
             //Vector2 position = gameObj.Position;
 
+			// This needs to be from the qyadtree
             foreach (GameObject colTest in GameSimulation.instance.GetObjects())
             {
-                if (colTest.TypeId() == GameObjectType.Wall)
-                {
-                    for (int dir = 0; dir < 4; dir++)
-                    {
-                        if (dir == UP && predicted_speed.Y > 0) continue;
-                        if (dir == DOWN && predicted_speed.Y < 0) continue;
-                        if (dir == LEFT && predicted_speed.X > 0) continue;
-                        if (dir == RIGHT && predicted_speed.X < 0) continue;
+				if (colTest.TypeId() == GameObjectType.Wall)
+				{
+					for (int dir = 0; dir < 4; dir++)
+					{
+						if (dir == UP && predicted_speed.Y > 0) continue;
+						if (dir == DOWN && predicted_speed.Y < 0) continue;
+						if (dir == LEFT && predicted_speed.X > 0) continue;
+						if (dir == RIGHT && predicted_speed.X < 0) continue;
 
-                        projectedMoveX = (dir >= LEFT ? predicted_speed.X : 0);
-                        projectedMoveY = (dir < LEFT ? predicted_speed.Y : 0);
+						projectedMoveX = (dir >= LEFT ? predicted_speed.X : 0);
+						projectedMoveY = (dir < LEFT ? predicted_speed.Y : 0);
 
-                        while ((colTest.Bounds().Contains(this.points[dir * 2].X + (int)this.Position.X + (int)projectedMoveX,
-                            this.points[dir * 2].Y + (int)this.Position.Y + (int)projectedMoveY)
-                            ||
-                            colTest.Bounds().Contains(this.points[dir * 2 + 1].X + (int)this.Position.X + (int)projectedMoveX,
-                                this.points[dir * 2 + 1].Y + (int)this.Position.Y + (int)projectedMoveY)))
-                        {
-                            if (dir == UP)
-                                projectedMoveY++;
-                            if (dir == DOWN)
-                                projectedMoveY--;
-                            if (dir == LEFT)
-                                projectedMoveX++;
-                            if (dir == RIGHT)
-                                projectedMoveX--;
-                        }
+						while ((colTest.Bounds().Contains(this.points[dir * 2].X + (int)this.Position.X + (int)projectedMoveX,
+							this.points[dir * 2].Y + (int)this.Position.Y + (int)projectedMoveY)
+							||
+							colTest.Bounds().Contains(this.points[dir * 2 + 1].X + (int)this.Position.X + (int)projectedMoveX,
+								this.points[dir * 2 + 1].Y + (int)this.Position.Y + (int)projectedMoveY)))
+						{
+							if (dir == UP)
+								projectedMoveY++;
+							if (dir == DOWN)
+								projectedMoveY--;
+							if (dir == LEFT)
+								projectedMoveX++;
+							if (dir == RIGHT)
+								projectedMoveX--;
+						}
 
-                        if (dir >= LEFT && dir <= RIGHT)
-                            predicted_speed.X = projectedMoveX;
-                        if (dir >= UP && dir <= DOWN)
-                            predicted_speed.Y = projectedMoveY;
-                    }
+						if (dir >= LEFT && dir <= RIGHT)
+							predicted_speed.X = projectedMoveX;
+						if (dir >= UP && dir <= DOWN)
+							predicted_speed.Y = projectedMoveY;
+					}
 
-                    // Resolve contact
-                    if (predicted_speed.Y > originalMoveY && originalMoveY < 0)
-                    {
-                        contactYtop = true;
-                    }
+					// Resolve contact
+					if (predicted_speed.Y > originalMoveY && originalMoveY < 0)
+					{
+						contactYtop = true;
+					}
 
-                    if (predicted_speed.Y < originalMoveY && originalMoveY > 0)
-                    {
-                        contactYbottom = true;
-                    }
+					if (predicted_speed.Y < originalMoveY && originalMoveY > 0)
+					{
+						contactYbottom = true;
+					}
 
-                    if (predicted_speed.X - originalMoveX < -0.01f)
-                    {
-                        contactRight = true;
-                    }
+					if (predicted_speed.X - originalMoveX < -0.01f)
+					{
+						contactRight = true;
+					}
 
-                    if (predicted_speed.X - originalMoveX > 0.01f)
-                    {
-                        contactLeft = true;
-                    }
+					if (predicted_speed.X - originalMoveX > 0.01f)
+					{
+						contactLeft = true;
+					}
 
-                    // Resolve collision from contact
-                    if (contactYbottom)
-                    {
-                        //position.Y += predicted_speed.Y;
-                        this.Velocity.Y = 0;// = new Vector2(gameObj.Velocity.X, 0);
-                        this.Grounded = true;
-                    }
-                    else if (contactYtop)
-                    {
-                        this.Velocity.Y = 0;
-                    }
+					// Resolve collision from contact
+					if (contactYbottom)
+					{
+						//position.Y += predicted_speed.Y;
+						this.Velocity.Y = 0;// = new Vector2(gameObj.Velocity.X, 0);
+						this.Grounded = true;
+					}
+					else if (contactYtop)
+					{
+						this.Velocity.Y = 0;
+					}
 
-                    if (contactLeft || contactRight)
-                    {
-                        //position.X += predicted_speed.X;
-                        this.Velocity.X = 0;// = new Vector2(0, gameObj.Velocity.Y);
-                    }
-                }
+					if (contactLeft || contactRight)
+					{
+						//position.X += predicted_speed.X;
+						this.Velocity.X = 0;// = new Vector2(0, gameObj.Velocity.Y);
+					}
+				}
+				else if (colTest.TypeId() == GameObjectType.Exit)
+				{
+					if (this.Bounds().Intersects(colTest.Bounds()))
+					{
+						// Stop updating this object
+						Active = false;
+
+						// Send Back to previous position
+						this.Position = Vector2.Zero;
+						this.Velocity = Vector2.Zero;
+
+						GameClient client = ServerManager.instance.GetClient(m_ClientId);
+						if (client != null)
+						{
+							client.inGame = false;
+
+							// Give this client some experience on database
+							ServerManager.instance.UpdateClientExpDB(client.userName, 30);
+
+							// Send him back to the lobby : TODO Get EXP from DB
+							PacketDefs.UpdateExpPacket flp = new PacketDefs.UpdateExpPacket(ServerManager.instance.GetClientExp(client.userName), PacketDefs.ID.OUT_TCP_FinishLevel);
+							ServerManager.instance.SendTcp(client.tcpSocket, fastJSON.JSON.ToJSON(flp, PacketDefs.JsonParams()));
+
+							if (!GameSimulation.instance.ArePeopleInGame())
+							{
+								// No one is in-game so clear data
+								GameSimulation.instance.ScheduleClearGameData();
+								return;
+							}
+						}
+					}
+				}
             }
         }
 

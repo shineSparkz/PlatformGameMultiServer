@@ -7,6 +7,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Data.SQLite;
 using System.IO;
+using Microsoft.Xna.Framework;
 
 using Server.Utils;
 using Server.GameSpecific;
@@ -41,7 +42,7 @@ namespace Server.Server
             this.CreateOrOpenDatabase();
         }
 
-        #region AccountManagement
+        #region DatabaseManagement
         private void CreateOrOpenDatabase()
         {
             if (!File.Exists("PlayerDB.sqlite"))
@@ -68,7 +69,7 @@ namespace Server.Server
             }
 
             // TODO : Test, can remove this
-            PrintLeaderBoard();
+            //PrintLeaderBoard();
         }
 
         private bool CheckClientInDatabase(string name)
@@ -136,6 +137,7 @@ namespace Server.Server
             }
 
             m_Clients[clientId].loggedIn = true;
+			m_Clients[clientId].userName = userName;
 
             string s = string.Format("Client {0} is now logged in and ready to play", userName);
             Logger.Log(s);
@@ -145,12 +147,29 @@ namespace Server.Server
 
         public void UpdateClientExpDB(string name, int amount)
         {
-            string update = string.Format("UPDATE [t_Players] set [exp] = '{0}' where [name] = '{1}'", amount, name);
+            string update = string.Format("UPDATE [t_Players] set [exp] = [exp] + '{0}' where [name] = '{1}'", amount, name);
             SQLiteCommand cmd = new SQLiteCommand(update, m_Database);
             cmd.ExecuteNonQuery();
         }
 
-        public void PrintLeaderBoard()
+		public int GetClientExp(string name)
+		{
+			string sqlQueery = "select * from t_Players order by exp desc";
+			SQLiteCommand qryCmd = new SQLiteCommand(sqlQueery, m_Database);
+
+			SQLiteDataReader reader = qryCmd.ExecuteReader();
+			while (reader.Read())
+			{
+				if ((string)reader["name"] == name)
+				{
+					return (int)reader["exp"];
+				}
+			}
+
+			return 0;
+		}
+
+		public void PrintLeaderBoard()
         {
             string sqlQueery = "select * from t_Players order by exp desc";
             SQLiteCommand qryCmd = new SQLiteCommand(sqlQueery, m_Database);
@@ -185,7 +204,9 @@ namespace Server.Server
 
 		public GameClient GetClient(int id)
 		{
-			return m_Clients[id];
+			if(m_Clients.ContainsKey(id))
+				return m_Clients[id];
+			return null;
 		}
 
         public Dictionary<int, GameClient> GetClients()
@@ -206,6 +227,15 @@ namespace Server.Server
 		public void SetPlayerHandle(int clientId, int handle)
 		{
 			m_Clients[clientId].playerObjectHandle = handle;
+		}
+
+		public void ResetClientHandles()
+		{
+			foreach (GameClient c in m_Clients.Values)
+			{
+				c.playerObjectHandle = -1;
+				c.inGame = false;
+			}
 		}
 
 		public bool ConnectToRemoteEndPoint(int clientId, IPEndPoint remEndPt)
@@ -246,12 +276,21 @@ namespace Server.Server
                 {
                     GameClient client = kvp.Value;
 
-                    // Set to empty // TODO ::::::::
-                    //GameObjects[client.playerObjectHandle].object_id = GameObjectType.Empty;
-
                     if (client.tcpSocket == tcpMatch)
                     {
-                        if (client.udpSocket != null && client.udpSocket.Client.Connected)
+						// Need to set the objetc that was associated with this player to deactivate, but can still be re-used by new player
+						if (client.playerObjectHandle < GameSimulation.instance.NumObjects())
+						{
+							GameObject quitPlayer = GameSimulation.instance.GetObject(client.playerObjectHandle);
+							if (quitPlayer != null)
+							{
+								quitPlayer.Active = false;
+								quitPlayer.Position = Vector2.Zero;
+								quitPlayer.Velocity = Vector2.Zero;
+							}
+						}
+
+						if (client.udpSocket != null && client.udpSocket.Client.Connected)
                         {
                             client.udpSocket.Close();
                             client.tcpSocket.Close();
@@ -292,8 +331,7 @@ namespace Server.Server
 			}
 		}
 
-
-		public void SendUdp(UdpClient client, string message)
+		private void SendUdp(UdpClient client, string message)
 		{
             try
             {
@@ -307,10 +345,11 @@ namespace Server.Server
             }
         }
 
-     //   public void SendUdp(int clientId, string msg)
-	//	{
-		//	SendUdp(m_Clients[clientId].udpSocket, msg);
-	//	}
+        public void SendUdp(int clientId, string msg)
+		{
+			if(m_Clients.ContainsKey(clientId))
+				SendUdp(m_Clients[clientId].udpSocket, msg);
+		}
 
         public void SendAllUdp(String data)
 		{

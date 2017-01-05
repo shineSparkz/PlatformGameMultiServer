@@ -50,12 +50,14 @@ namespace Server.GameSpecific
 	{
         public enum Facing { Left = -1, Right = 1 };
 
+        public Facing m_Facing = Facing.Right;
+
 		protected Rectangle m_Bounds;
         protected Vector2 m_Position;
         protected GameObjectType m_TypeId;
-        protected Facing m_Facing = Facing.Right;
         protected int m_UniqueId;
         protected bool m_IsUpdatable;
+		protected bool m_Active = true;
         protected float frameX = 0.0f;
         protected float frameY = 0.0f;
 
@@ -63,6 +65,25 @@ namespace Server.GameSpecific
         {
             get; set;
         }
+
+		public bool SentInactivePacket = false;
+
+		public bool Active
+		{
+			get
+			{
+				return m_Active;
+			}
+			set
+			{
+				m_Active = value;
+
+				if (m_Active == true)
+				{
+					SentInactivePacket = false;
+				}
+			}
+		}
 
         public Vector2 Position
 		{
@@ -125,6 +146,7 @@ namespace Server.GameSpecific
             IsClient = 0;
             m_IsUpdatable = false;
             Grounded = true;
+			Active = true;
 		}
 
 		public GameObject(GameObjectType obj_id, int unq_id, int isClient, bool updatable)
@@ -136,6 +158,7 @@ namespace Server.GameSpecific
             IsClient = isClient;
             m_IsUpdatable = updatable;
             Grounded = true;
+			Active = true;
 		}
 
 		public GameObject(Vector2 p, GameObjectType obj_id, int unq_id, int isClient, bool updatable)
@@ -147,9 +170,10 @@ namespace Server.GameSpecific
             IsClient = isClient;
             m_IsUpdatable = updatable;
             Grounded = true;
+			Active = true;
 		}
 
-        public virtual void Start()
+		public virtual void Start()
         {
         }
 
