@@ -170,7 +170,7 @@ namespace Server.Server
 				if (m_ServerManager.ConnectToRemoteEndPoint(id, remoteEndpoint))
 				{
 					// Send Back to sender only to establish udp connection
-					m_ServerManager.SendUdp(id, receiveString);
+					m_ServerManager.SendUdp(ServerManager.instance.GetClient(id).udpSocket , receiveString);
 					udplistener.BeginReceive(new AsyncCallback(UdpReadCallback), listenstate);
 				}
 				else

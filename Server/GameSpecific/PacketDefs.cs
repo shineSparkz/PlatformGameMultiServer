@@ -17,6 +17,7 @@ namespace Server.GameSpecific
 
 			// UDP out
 			OUT_UDP_UpdatedObject,
+            OUT_UDP_ViewUpdate,
 
 			// TCP in
             IN_TCP_CreateAccount,
@@ -129,6 +130,19 @@ namespace Server.GameSpecific
                 this.py = py;
                 this.fx = fx;
                 this.fy = fy;
+            }
+        }
+
+        [Serializable()]
+        public class ViewUpdatePacket : basepacket
+        {
+            public float px;
+            public float py;
+            public ViewUpdatePacket(float x, float y)
+            {
+                this.name = (int)ID.OUT_UDP_ViewUpdate;
+                this.px = x;
+                this.py = y;
             }
         }
 

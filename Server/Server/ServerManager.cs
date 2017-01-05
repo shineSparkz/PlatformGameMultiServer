@@ -293,7 +293,7 @@ namespace Server.Server
 		}
 
 
-		void SendUdp(UdpClient client, string message)
+		public void SendUdp(UdpClient client, string message)
 		{
             try
             {
@@ -307,10 +307,10 @@ namespace Server.Server
             }
         }
 
-        public void SendUdp(int clientId, string msg)
-		{
-			SendUdp(m_Clients[clientId].udpSocket, msg);
-		}
+     //   public void SendUdp(int clientId, string msg)
+	//	{
+		//	SendUdp(m_Clients[clientId].udpSocket, msg);
+	//	}
 
         public void SendAllUdp(String data)
 		{

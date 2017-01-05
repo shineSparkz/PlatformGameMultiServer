@@ -211,7 +211,7 @@ namespace Server.Server
                 m_ServerManager.SetPlayerHandle(clientId, m_GameSimulation.NumObjects());
 
                 // Now add them **** TODO Need position
-                GameObject newPlayer = new Player(Vector2.Zero, GameObjectType.Player, m_GameSimulation.NumObjects(), 1, true);
+                GameObject newPlayer = new Player(Vector2.Zero, GameObjectType.Player, m_GameSimulation.NumObjects(), 1, true, clientId);
                 m_GameSimulation.AddGameObject(newPlayer);
 
                 // Create Packet to send to other clients already on server with just this player. *note* last param is set to 0 intentionally

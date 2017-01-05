@@ -43,6 +43,9 @@ namespace Server.GameSpecific
         private List<GameObject> m_UpdateObjects = new List<GameObject>();
 		private bool m_GameLoaded = false;
         private bool m_ShouldQuit = false;
+        private float m_MapWidth = 1920;
+        private float m_MapHeight = 1080;
+        private Rectangle m_LevelBounds;
 
         public static Random Rand = new Random(Environment.TickCount);
 
@@ -53,7 +56,23 @@ namespace Server.GameSpecific
 
         public GameSimulation()
 		{
+            m_LevelBounds = new Rectangle(0, 0, (int)m_MapWidth, (int)m_MapHeight);
 		}
+
+        public Rectangle LevelBounds()
+        {
+            return m_LevelBounds;
+        }
+
+        public float MapWidth()
+        {
+            return m_MapWidth;
+        }
+
+        public float MapHeight()
+        {
+            return m_MapHeight;
+        }
 
 		public bool IsGameDataLoaded()
 		{
@@ -157,7 +176,7 @@ namespace Server.GameSpecific
                     // Would need to check if it was grounded
                     if (player.Grounded)
                     {
-                        velocity.Y = -12.0f;
+                        velocity.Y = -16.0f;
                         player.Grounded = false;
                     }
                 }

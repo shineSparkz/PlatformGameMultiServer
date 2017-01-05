@@ -17,12 +17,18 @@ namespace Server.GameSpecific.GameObjects
         const int LEFT = 2;
         const int RIGHT = 3;
 
-        private Point[] points;
+        int m_ClientId;
 
-        public Player(Vector2 p, GameObjectType obj_id, int unq_id, int isClient, bool updatable) :
+        private Point[] points;
+        private GameView m_GameView = null;
+
+        public Player(Vector2 p, GameObjectType obj_id, int unq_id, int isClient, bool updatable, int clientId) :
             base(p, obj_id, unq_id, isClient, updatable)
         {
             this.CreateContactPoints();
+
+            m_GameView = new GameView(p, new Vector2(800, 600));
+            this.m_ClientId = clientId;
         }
 
         public override void Update()
@@ -37,6 +43,15 @@ namespace Server.GameSpecific.GameObjects
 
             // Apply the force of gravity
             this.Velocity.Y += 0.981f;
+
+            m_GameView.UpdateView(this.Position, 0.5f, m_ClientId);
+
+            // Check for death
+            if (!GameSimulation.instance.LevelBounds().Contains(m_Bounds))
+            {
+                // TODO : Send death to player msg, reset to a known spawn position
+                this.Position = Vector2.Zero;
+            }
         }
 
         private void CheckCollisions()
