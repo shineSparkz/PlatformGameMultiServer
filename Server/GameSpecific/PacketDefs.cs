@@ -16,6 +16,7 @@ namespace Server.GameSpecific
 			OUT_TCP_StartGame,
 			OUT_TCP_FinishLevel,
 			OUT_TCP_ExpQueery,
+            OUT_TCP_LeaderboardRequest,
 
 			// UDP out
 			OUT_UDP_UpdatedObject,
@@ -26,9 +27,10 @@ namespace Server.GameSpecific
             IN_TCP_Login,
 			IN_TCP_StartGame,
 			IN_TCP_ExpQueery,
+            IN_TCP_LeaderboardRequest,
 
-			// UDP oin
-			IN_UDP_Input,
+            // UDP oin
+            IN_UDP_Input,
 		}	
 
 		private static fastJSON.JSONParameters m_JsonParams = new fastJSON.JSONParameters();
@@ -161,6 +163,17 @@ namespace Server.GameSpecific
 				this.exp = exp;
 			}
 		}
+
+        [Serializable()]
+        public class LeaderboardPacket : basepacket
+        {
+            public string data;
+            public LeaderboardPacket(string data)
+            {
+                this.name = (int)ID.OUT_TCP_LeaderboardRequest;
+                this.data = data;
+            }
+        }
 
         #endregion
     }

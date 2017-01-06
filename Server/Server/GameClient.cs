@@ -22,6 +22,7 @@ namespace Server.Server
         public bool inGame = false;     // TODO ** reset this when we handle finishing levels or returning to lobby
 		public int playerObjectHandle = -1;
 		public string userName = "";
+        public int localExpCache = 0;   // Minimise database hits
 
 		public GameClient(Socket tcp, UdpClient udp, IPEndPoint ep)
 		{

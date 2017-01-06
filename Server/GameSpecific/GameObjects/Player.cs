@@ -219,11 +219,14 @@ namespace Server.GameSpecific.GameObjects
 						{
 							client.inGame = false;
 
+                            // NOTE** This is the only time we want to update the database (when they finish the level)
+                            client.localExpCache += 30;
+
 							// Give this client some experience on database
-							ServerManager.instance.UpdateClientExpDB(client.userName, 30);
+							ServerManager.instance.UpdateClientExpDB(client.userName, client.localExpCache);
 
 							// Send him back to the lobby : TODO Get EXP from DB
-							PacketDefs.UpdateExpPacket flp = new PacketDefs.UpdateExpPacket(ServerManager.instance.GetClientExp(client.userName), PacketDefs.ID.OUT_TCP_FinishLevel);
+							PacketDefs.UpdateExpPacket flp = new PacketDefs.UpdateExpPacket(client.localExpCache, PacketDefs.ID.OUT_TCP_FinishLevel);
 							ServerManager.instance.SendTcp(client.tcpSocket, fastJSON.JSON.ToJSON(flp, PacketDefs.JsonParams()));
 
 							if (!GameSimulation.instance.ArePeopleInGame())
@@ -251,11 +254,10 @@ namespace Server.GameSpecific.GameObjects
 						GameClient client = ServerManager.instance.GetClient(m_ClientId);
 						if (client != null)
 						{
-							// Give this client some experience on database
-							ServerManager.instance.UpdateClientExpDB(client.userName, 10);
+                            client.localExpCache += 10;
 							
-							// Send TCP pack with new exp update
-							PacketDefs.UpdateExpPacket flp = new PacketDefs.UpdateExpPacket(ServerManager.instance.GetClientExp(client.userName), PacketDefs.ID.OUT_TCP_ExpQueery);
+							// Send TCP pack with new exp update, note* only hit the database to increment exp when the level is finished
+							PacketDefs.UpdateExpPacket flp = new PacketDefs.UpdateExpPacket(client.localExpCache, PacketDefs.ID.OUT_TCP_ExpQueery);
 							ServerManager.instance.SendTcp(client.tcpSocket, fastJSON.JSON.ToJSON(flp, PacketDefs.JsonParams()));
 						}
 					}

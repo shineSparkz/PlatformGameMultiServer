@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.Xna.Framework;
 
 using Server.GameSpecific;
+using Server.Server;
 
 namespace Server.GameSpecific.GameObjects
 {
@@ -23,7 +24,7 @@ namespace Server.GameSpecific.GameObjects
 				foreach (GameObject go in GameSimulation.instance.GetObjects())
 				{
 					// TODO : Add other types that need collision checks
-					if (go.TypeId() == GameObjectType.EnemyBlueMinion)
+					if ( WantToCollideWith(go.TypeId()))
 					{
 						m_CollisionObjects.Add(go);
 					}
@@ -32,6 +33,17 @@ namespace Server.GameSpecific.GameObjects
 
 			m_Bounds = new Rectangle(0, 0, 16, 16);
 		}
+
+        public bool WantToCollideWith(GameObjectType t)
+        {
+            if (t == GameObjectType.EnemyShadow || t == GameObjectType.EnemyTaurus || t == GameObjectType.EnemyBlueMinion || t == GameObjectType.DestructablePlatform
+                || t == GameObjectType.EnemyDisciple)
+            {
+                return true;
+            }
+
+            return false;
+        }
 
 		public override void Update()
 		{
@@ -56,7 +68,18 @@ namespace Server.GameSpecific.GameObjects
 						{
 							go.Active = false;
 							this.Active = false;
-						}
+
+                            // Add exp for killimg enemy
+                            GameClient client = ServerManager.instance.GetClient(InvokedBy);
+                            if (client != null)
+                            {
+                                client.localExpCache += 2;
+
+                                // Send TCP pack with new exp update, note* only hit the database to increment exp when the level is finished
+                                PacketDefs.UpdateExpPacket flp = new PacketDefs.UpdateExpPacket(client.localExpCache, PacketDefs.ID.OUT_TCP_ExpQueery);
+                                ServerManager.instance.SendTcp(client.tcpSocket, fastJSON.JSON.ToJSON(flp, PacketDefs.JsonParams()));
+                            }
+                        }
 					}
 				}
 			}

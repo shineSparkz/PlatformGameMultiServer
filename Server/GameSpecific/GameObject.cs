@@ -135,6 +135,12 @@ namespace Server.GameSpecific
         {
             return m_Bounds;
         }
+
+        // This is unfortunate, but too late in dev, it's for knowing who has created an object, bullet for example
+        public int InvokedBy
+        {
+            get; set;
+        }
 		
         //----------------------------------------
 		public GameObject()

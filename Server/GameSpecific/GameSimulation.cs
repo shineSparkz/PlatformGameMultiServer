@@ -92,7 +92,7 @@ namespace Server.GameSpecific
         {
             return m_MapHeight;
         }
-
+        
 		public bool IsGameDataLoaded()
 		{
 			return m_GameLoaded;
@@ -138,7 +138,9 @@ namespace Server.GameSpecific
 			GameObject skull = new GameObject(new Vector2(10 * 64, 200), GameObjectType.GoldSkull, m_GameObjects.Count, 0, false);
 			this.AddGameObject(skull);
 
-			// .....
+            // .....
+            GameObject shadow = new ShadowEnemy(new Vector2(300, 450 - 64), GameObjectType.EnemyShadow, m_GameObjects.Count, 0, true);
+            this.AddGameObject(shadow);
 
 			// Allocate bulletPool last
 			m_BulletPoolStart = m_GameObjects.Count;
@@ -172,7 +174,9 @@ namespace Server.GameSpecific
 
 		private bool IsUpdateable(GameObjectType t)
         {
-			if (t == GameObjectType.Player || t == GameObjectType.EnemyBlueMinion || t == GameObjectType.PlayerProjectile)
+			if (t == GameObjectType.Player || t == GameObjectType.EnemyBlueMinion || t == GameObjectType.PlayerProjectile
+                || t == GameObjectType.EnemyShadow || t == GameObjectType.DestructablePlatform || t == GameObjectType.EnemyDisciple 
+                || t == GameObjectType.EnemyProjectile || t == GameObjectType.EnemyTaurus )
 			{
 				return true;
 			}
@@ -227,7 +231,7 @@ namespace Server.GameSpecific
 			return peopleStillPlaying;
 		}
 
-		public void InputUpdate(int handle, int key, int action)
+		public void InputUpdate(int handle, int key, int action, int clientId)
 		{
 			if (m_ShouldClearData || (handle >= m_GameObjects.Count) || handle < 0)
 				return;
@@ -267,6 +271,7 @@ namespace Server.GameSpecific
 							bullet.m_Facing = player.m_Facing;
 							bullet.Position = player.Position + new Vector2(64, 64);
 							bullet.Velocity.X = 20 * (float)bullet.m_Facing;
+                            bullet.InvokedBy = clientId;
 							break;
 						}
 					}

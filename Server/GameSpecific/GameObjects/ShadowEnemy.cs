@@ -30,9 +30,12 @@ namespace Server.GameSpecific.GameObjects
 		float m_AnimTick = 0.08f;
 		float m_FacingTime = 0.0f;
 		int m_ColHeight = 4;
+        int m_PickedTarget = 0;
+        int m_PlayerTargetIndex = 0;
 		bool m_CanSwitchDir = true;
+        private List<GameObject> m_Players = new List<GameObject>();
 
-		public ShadowEnemy(Vector2 p, GameObjectType obj_id, int unq_id, int isClient, bool updatable) :
+        public ShadowEnemy(Vector2 p, GameObjectType obj_id, int unq_id, int isClient, bool updatable) :
 			base(p, obj_id, unq_id, isClient, updatable)
 		{
 			m_Bounds = new Rectangle(0, 0, 32, 32);
@@ -40,13 +43,29 @@ namespace Server.GameSpecific.GameObjects
 
 		public override void Update()
 		{
-			//if (m_EnemyParent->IsDead())
-			//	return;
+            //if (m_EnemyParent->IsDead())
+            //	return;
+            // Resolve new players
+            if (m_Players.Count == 0 || m_Players.Count < Server.ServerManager.instance.NumClients())
+            {
+                m_Players = GameSimulation.instance.GetPlayers();
+            }
 
-			m_AnimTick -= DT;
-			m_AttackWaitCount -= DT;
-			Vector2 player_centre = new Vector2(300, 300);// m_PlayerTransform->position + m_PlayerTransform->origin;
-			bool break_idle = false;
+            if (m_Players.Count == 0)
+                return;
+
+            m_AnimTick -= DT;
+
+            if (m_PickedTarget == 0)
+            {
+                // Get Random target
+                m_PlayerTargetIndex = GameSimulation.RandomRange(0, m_Players.Count);
+                m_PickedTarget = 1;
+            }
+
+            m_AttackWaitCount -= DT;
+            Vector2 player_centre = m_Players[m_PlayerTargetIndex].Position;
+            bool break_idle = false;
 			bool got_atatcked = false;
 			float dist = Vector2.Distance(Position, player_centre);
 
@@ -88,12 +107,13 @@ namespace Server.GameSpecific.GameObjects
 				case ShadowAIState.Attacking:
 					{
 						// No object
-						Velocity = new Vector2((float)m_Facing * 75.0f, 0.0f);
+						Velocity = new Vector2((float)m_Facing * 0.8f, 0.0f);
 
 						// TODO *** Handle collision for walls
 						break;
 					}
 				case ShadowAIState.Sinking:
+                    m_PickedTarget = 0;
 					break;
 			}
 

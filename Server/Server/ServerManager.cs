@@ -147,7 +147,7 @@ namespace Server.Server
 
         public void UpdateClientExpDB(string name, int amount)
         {
-            string update = string.Format("UPDATE [t_Players] set [exp] = [exp] + '{0}' where [name] = '{1}'", amount, name);
+            string update = string.Format("UPDATE [t_Players] set [exp] = '{0}' where [name] = '{1}'", amount, name);
             SQLiteCommand cmd = new SQLiteCommand(update, m_Database);
             cmd.ExecuteNonQuery();
         }
@@ -169,14 +169,20 @@ namespace Server.Server
 			return 0;
 		}
 
-		public void PrintLeaderBoard()
+		public string GetLeaderBoard()
         {
             string sqlQueery = "select * from t_Players order by exp desc";
             SQLiteCommand qryCmd = new SQLiteCommand(sqlQueery, m_Database);
 
+            string sOut = "";
+
             SQLiteDataReader reader = qryCmd.ExecuteReader();
             while (reader.Read())
-                Console.WriteLine("Name: " + reader["name"] + "\tExp: " + reader["exp"]);
+            {
+                sOut += ("Name: " + reader["name"] + "\tExp: " + reader["exp"] + "\n");
+            }
+
+            return sOut;
         }
         #endregion
 

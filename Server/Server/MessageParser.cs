@@ -31,9 +31,11 @@ namespace Server.Server
             MessageFunctions[PacketDefs.ID.IN_TCP_Login] = UserLoginMsg;
             MessageFunctions[PacketDefs.ID.IN_TCP_StartGame] = StartGameMsg;
 			MessageFunctions[PacketDefs.ID.IN_TCP_ExpQueery] = ExpQueeryMsg;
-		}
+            MessageFunctions[PacketDefs.ID.IN_TCP_LeaderboardRequest] = LeaderboardRequestMsg;
 
-		public void ParseMessage(string msg)
+        }
+
+        public void ParseMessage(string msg)
 		{
 			// TODO : This needs to be in some kind of co-routine or thread
 			Dictionary<string, object> JsonData = null;
@@ -168,34 +170,24 @@ namespace Server.Server
 			// Send the info as udp
 			ServerManager.instance.SendUdp(clientId, fastJSON.JSON.ToJSON(returnPack, PacketDefs.JsonParams()));
 
-			// Send them an exp update
-			PacketDefs.UpdateExpPacket flp = new PacketDefs.UpdateExpPacket(ServerManager.instance.GetClientExp(name), PacketDefs.ID.OUT_TCP_ExpQueery);
-			ServerManager.instance.SendTcp(ServerManager.instance.GetClient(clientId).tcpSocket, fastJSON.JSON.ToJSON(flp, PacketDefs.JsonParams()));
-            //ServerManager.instance.SendTcp(ServerManager.instance.GetClient(clientId).tcpSocket, fastJSON.JSON.ToJSON(returnPack, PacketDefs.JsonParams()));
+            // Send them an exp update
+            GameClient thisClient = ServerManager.instance.GetClient(clientId);
 
-            return true;
+            if (thisClient != null)
+            {
+
+                int expFromDB = ServerManager.instance.GetClientExp(name);
+                thisClient.localExpCache = expFromDB;
+
+                PacketDefs.UpdateExpPacket flp = new PacketDefs.UpdateExpPacket(expFromDB, PacketDefs.ID.OUT_TCP_ExpQueery);
+                ServerManager.instance.SendTcp(ServerManager.instance.GetClient(clientId).tcpSocket, fastJSON.JSON.ToJSON(flp, PacketDefs.JsonParams()));
+                return true;
+            }
+            else
+            {
+                return false;
+            }
         }
-
-		private bool ExpQueeryMsg(Dictionary<string, object> json)
-		{
-			// Just send them back the request
-			int clientId = -1;
-			if (json.ContainsKey("id"))
-			{
-				clientId = (int)((long)json["id"]);
-			}
-
-			GameClient client = ServerManager.instance.GetClient(clientId);
-
-			if (client != null)
-			{
-				PacketDefs.UpdateExpPacket flp = new PacketDefs.UpdateExpPacket(ServerManager.instance.GetClientExp(client.userName), PacketDefs.ID.OUT_TCP_ExpQueery);
-				ServerManager.instance.SendTcp(ServerManager.instance.GetClient(clientId).tcpSocket, fastJSON.JSON.ToJSON(flp, PacketDefs.JsonParams()));
-				return true;
-			}
-
-			return false;
-		}
 
 		private bool StartGameMsg(Dictionary<string, object> json)
 		{
@@ -378,7 +370,50 @@ namespace Server.Server
 			}
 		}
 
-		private bool InputMsg(Dictionary<string, object> json)
+		private bool ExpQueeryMsg(Dictionary<string, object> json)
+		{
+			// Just send them back the request
+			int clientId = -1;
+			if (json.ContainsKey("id"))
+			{
+				clientId = (int)((long)json["id"]);
+			}
+
+			GameClient client = ServerManager.instance.GetClient(clientId);
+
+			if (client != null)
+			{
+				PacketDefs.UpdateExpPacket flp = new PacketDefs.UpdateExpPacket(ServerManager.instance.GetClientExp(client.userName), PacketDefs.ID.OUT_TCP_ExpQueery);
+				ServerManager.instance.SendTcp(ServerManager.instance.GetClient(clientId).tcpSocket, fastJSON.JSON.ToJSON(flp, PacketDefs.JsonParams()));
+				return true;
+			}
+
+			return false;
+		}
+
+        private bool LeaderboardRequestMsg(Dictionary<string, object> json)
+        {
+            // Just send them back the request
+            int clientId = -1;
+            if (json.ContainsKey("id"))
+            {
+                clientId = (int)((long)json["id"]);
+            }
+
+            GameClient client = ServerManager.instance.GetClient(clientId);
+
+            if (client != null)
+            {
+                PacketDefs.LeaderboardPacket lbp = new PacketDefs.LeaderboardPacket(ServerManager.instance.GetLeaderBoard());
+                ServerManager.instance.SendTcp(ServerManager.instance.GetClient(clientId).tcpSocket, fastJSON.JSON.ToJSON(lbp, PacketDefs.JsonParams()));
+                return true;
+            }
+
+            return false;
+        }
+
+
+        private bool InputMsg(Dictionary<string, object> json)
 		{
 			long input = -1;
 			long clientId = -1;
@@ -406,7 +441,7 @@ namespace Server.Server
 			}
 
 			int playerHandle = m_ServerManager.GetPlayerHandle((int)clientId);
-			m_GameSimulation.InputUpdate(playerHandle, (int)input, (int)action);
+			m_GameSimulation.InputUpdate(playerHandle, (int)input, (int)action, (int)clientId);
 
 			return true;
 		}
