@@ -93,6 +93,7 @@
     <Compile Include="GameSpecific\GameObjects\BlueMinionEnemy.cs" />
     <Compile Include="GameSpecific\GameObjects\Player.cs" />
     <Compile Include="GameSpecific\GameObjects\PlayerProjectile.cs" />
+    <Compile Include="GameSpecific\GameObjects\ShadowEnemy.cs" />
     <Compile Include="GameSpecific\GameSimulation.cs" />
     <Compile Include="GameSpecific\GameView.cs" />
     <Compile Include="Server\AsynchSocketListener.cs" />

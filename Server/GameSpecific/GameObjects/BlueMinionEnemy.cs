@@ -31,10 +31,10 @@ namespace Server.GameSpecific.GameObjects
         public BlueMinionEnemy(Vector2 p, GameObjectType obj_id, int unq_id, int isClient, bool updatable) :
             base(p, obj_id, unq_id, isClient, updatable)
         {
+			m_Bounds = new Rectangle(0, 0, 24, 24);
+		}
 
-        }
-
-        public override void Start()
+		public override void Start()
         {
             base.Start();
         }

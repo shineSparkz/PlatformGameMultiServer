@@ -11,16 +11,29 @@ namespace Server.GameSpecific.GameObjects
 {
     class Player : GameObject
     {
-        const int iterations = 3;
+		#region Constants
+		const int iterations = 3;
         const int UP = 0;
         const int DOWN = 1;
         const int LEFT = 2;
         const int RIGHT = 3;
+		const float DT = 1.0f / 50.0f;
+		const float MAX_FALL_SPEED = 100.0f;
+		const float INVINCIBLE_TIME_RESET = 2.0f;
+		#endregion
 
-        int m_ClientId;
-
-        private Point[] points;
+		private Point[] points;
         private GameView m_GameView = null;
+		private UInt64 m_StepCounter = 0;
+		private float m_MillisPerFrame = 0.07f;
+		private float m_AnimTick = 0.0f;
+		private float m_HurtCounter = 0.0f;
+		private int m_ClientId;
+		private int m_NumFramesX;
+		private int m_Health = 100;
+		private bool m_Dying = false;
+		private bool m_Hurt = false;
+
 
         public Player(Vector2 p, GameObjectType obj_id, int unq_id, int isClient, bool updatable, int clientId) :
             base(p, obj_id, unq_id, isClient, updatable)
@@ -33,24 +46,75 @@ namespace Server.GameSpecific.GameObjects
 
         public override void Update()
         {
-            CheckCollisions();
-            //position += gameObj.Velocity * dt;
-            //int x = (int)position.X;
-            //int y = (int)position.Y;
-            //gameObj.Position = new Vector2(x,y);
-            this.Position += this.Velocity;
+			m_AnimTick -= DT;
+			++m_StepCounter;
 
-            // Apply the force of gravity
-            this.Velocity.Y += 0.981f;
+			UpdateAnimation();
 
-            m_GameView.UpdateView(this.Position, 0.5f, m_ClientId);
+			if (!m_Dying)
+			{
+				CheckCollisions();
 
-            // Check for death
-            if (!GameSimulation.instance.LevelBounds().Contains(m_Bounds))
-            {
-                // TODO : Send death to player msg, reset to a known spawn position
-                this.Position = Vector2.Zero;
-            }
+				// Update position
+				this.Position += this.Velocity;
+
+				// Apply the force of gravity
+				this.Velocity.Y += 0.981f;
+
+				// Cap fall speed
+				if (Velocity.Y > MAX_FALL_SPEED)
+				{
+					Velocity.Y = MAX_FALL_SPEED;
+				}
+
+				// Check for walking of a platform
+				if (Grounded)
+				{
+					if (Velocity.Y > 100.0f)
+					{
+						Grounded = false;
+					}
+				}
+
+				m_GameView.UpdateView(this.Position, 0.5f, m_ClientId);
+
+				// Check for hurt
+				if (m_Hurt)
+				{
+					m_HurtCounter += DT;
+
+					//if ((m_StepCounter % 3 == 0))
+						//this->m_Renderer->SetColour(sf::Color::White);
+					//else
+						//this->m_Renderer->SetColour(sf::Color::Red);
+
+					if (m_HurtCounter >= INVINCIBLE_TIME_RESET)
+					{
+						m_HurtCounter = 0.0f;
+						m_Hurt = false;
+
+						//this->m_Renderer->SetColour(sf::Color::White);
+					}
+				}
+
+				// Check for death
+				if (m_Health <= 0 && !m_Dying)
+				{
+					//this->m_Renderer->SetColour(sf::Color::White);
+					m_Dying = true;
+					Position = Vector2.Zero;
+					Velocity = Vector2.Zero;
+					frameX = 0;
+				}
+
+				// Check for death
+				if (!GameSimulation.instance.LevelBounds().Contains(m_Bounds))
+				{
+					// TODO : Send death to player msg, reset to a known spawn position
+					this.Position = Vector2.Zero;
+					Velocity = Vector2.Zero;
+				}
+			}
         }
 
         private void CheckCollisions()
@@ -126,8 +190,7 @@ namespace Server.GameSpecific.GameObjects
 					// Resolve collision from contact
 					if (contactYbottom)
 					{
-						//position.Y += predicted_speed.Y;
-						this.Velocity.Y = 0;// = new Vector2(gameObj.Velocity.X, 0);
+						this.Velocity.Y = 0;
 						this.Grounded = true;
 					}
 					else if (contactYtop)
@@ -137,8 +200,7 @@ namespace Server.GameSpecific.GameObjects
 
 					if (contactLeft || contactRight)
 					{
-						//position.X += predicted_speed.X;
-						this.Velocity.X = 0;// = new Vector2(0, gameObj.Velocity.Y);
+						this.Velocity.X = 0;
 					}
 				}
 				else if (colTest.TypeId() == GameObjectType.Exit)
@@ -173,8 +235,114 @@ namespace Server.GameSpecific.GameObjects
 						}
 					}
 				}
+				else if (colTest.TypeId() == GameObjectType.GoldSkull)
+				{
+					if (this.Bounds().Intersects(colTest.Bounds()) && colTest.Active)
+					{
+						colTest.Active = false;
+
+						// Send out a packet here informing them it's deactivated (rather than using standward way and doing it every frame)
+						PacketDefs.PlayerInputUpdatePacket updatePacket = new PacketDefs.PlayerInputUpdatePacket(
+							colTest.UnqId(), colTest.Position.X, colTest.Position.Y, colTest.FrameX(), colTest.FrameY(), colTest.Active);
+						ServerManager.instance.SendAllUdp(fastJSON.JSON.ToJSON(
+							updatePacket, PacketDefs.JsonParams()));
+
+						// Add exp for collecting skull
+						GameClient client = ServerManager.instance.GetClient(m_ClientId);
+						if (client != null)
+						{
+							// Give this client some experience on database
+							ServerManager.instance.UpdateClientExpDB(client.userName, 10);
+							
+							// Send TCP pack with new exp update
+							PacketDefs.UpdateExpPacket flp = new PacketDefs.UpdateExpPacket(ServerManager.instance.GetClientExp(client.userName), PacketDefs.ID.OUT_TCP_ExpQueery);
+							ServerManager.instance.SendTcp(client.tcpSocket, fastJSON.JSON.ToJSON(flp, PacketDefs.JsonParams()));
+						}
+					}
+				}
             }
         }
+
+		private void UpdateAnimation()
+		{
+			if (m_Dying)
+			{
+				m_MillisPerFrame = 0.09f;
+				m_NumFramesX = 7;
+
+				if (m_Facing == Facing.Left)
+					frameY = 9;
+				else
+					frameY = 4;
+
+				if (m_AnimTick <= 0.0f)
+				{
+					++frameX;
+
+					if (frameX > m_NumFramesX)
+					{
+						// Dead
+						frameX = 7;
+						//EventSys::SendEvent(EventSys::EventID::PlayerDead, nullptr);
+					}
+
+					m_AnimTick = m_MillisPerFrame;
+				}
+			}
+			else // Not Dying
+			{
+				int newXFrameOnCompleteRow = 0;
+
+				if (Grounded)
+				{
+					newXFrameOnCompleteRow = 2;
+
+					if (Math.Abs(Velocity.X) > 0.1f)
+					{
+						m_NumFramesX = 10;
+
+						if (m_Facing == Facing.Left)
+							frameY = 5;
+						else
+							frameY = 0;
+					}
+					else //Not Moving
+					{
+						m_NumFramesX = 0;
+
+						if (m_Facing == Facing.Left)
+							frameY = 5;
+						else
+							frameY = 0;
+					}
+				}
+				else
+				{
+					m_NumFramesX = 7;
+					newXFrameOnCompleteRow = 7;
+
+					if (m_Facing == Facing.Left)
+					{
+						frameY = 6;
+					}
+					else
+					{
+						frameY = 1;
+					}
+				}
+
+				// Tick
+				if (m_AnimTick <= 0.0f)
+				{
+					++frameX;
+
+					if (frameX >= m_NumFramesX)
+						frameX = newXFrameOnCompleteRow;
+
+					m_AnimTick = m_MillisPerFrame;
+				}
+			}
+		}
 
         private void CreateContactPoints()
         {

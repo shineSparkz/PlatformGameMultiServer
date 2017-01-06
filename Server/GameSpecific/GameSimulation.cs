@@ -16,7 +16,8 @@ namespace Server.GameSpecific
 {
 	public class GameSimulation
 	{
-        private static GameSimulation _instance;
+		#region Singleton
+		private static GameSimulation _instance;
         public static GameSimulation instance
         {
             get
@@ -31,34 +32,43 @@ namespace Server.GameSpecific
 
             private set {; }
         }
+		#endregion
 
-        const float FPS = 60.0f;
-        const double DELTA_TICK = 1 / 50.0f;
-        const float MAX_FRAME_SKIP = 10;
-
+		#region Constants
+		const double DELTA_TICK = 1 / 50.0;
         const int RELEASE = 0;
         const int PRESS = 1;
-
-		private List<GameObject> m_GameObjects = new List<GameObject>();
-        private List<GameObject> m_UpdateObjects = new List<GameObject>();
-		private bool m_GameLoaded = false;
-        private bool m_ShouldQuit = false;
-		private bool m_ShouldClearData = false;
-        private float m_MapWidth = 1920;
-        private float m_MapHeight = 1080;
-		private int m_PlayersInGameSession = 0; // TODO : this would need to be per cluster
-		private int m_BulletPoolStart = 0;
 		const int BULLET_POOL_SIZE = 10;
-        private Rectangle m_LevelBounds;
 
-        public static Random Rand = new Random(Environment.TickCount);
+		// Keys
+		const int LEFT_K = 0;
+		const int RIGHT_K = 3;
+		const int JUMP_K = 22;
+		const int SHOOT_K = 57;
+		#endregion
+
+		#region Static Helpers
+		public static Random Rand = new Random(Environment.TickCount);
 
         public static int RandomRange(int min, int max)
         {
             return Rand.Next(min, max);
         }
+		#endregion
 
-        public GameSimulation()
+		private List<GameObject> m_GameObjects = new List<GameObject>();
+        private List<GameObject> m_UpdateObjects = new List<GameObject>();
+        private Rectangle m_LevelBounds;
+		private bool m_GameLoaded = false;
+        private bool m_ShouldQuit = false;
+		private bool m_ShouldClearData = false;
+        private float m_MapWidth = 1920;
+        private float m_MapHeight = 1080;
+		private int m_PlayersInGameSession = 0;
+		private int m_BulletPoolStart = 0;
+
+
+		public GameSimulation()
 		{
             m_LevelBounds = new Rectangle(0, 0, (int)m_MapWidth, (int)m_MapHeight);
 		}
@@ -124,7 +134,11 @@ namespace Server.GameSpecific
 			// Add Exit
 			this.AddGameObject(new GameObject(new Vector2(14 * 64, 400), GameObjectType.Exit, m_GameObjects.Count, 0, false));
 
-			// etc
+			// Add Collectable skull (for exp)
+			GameObject skull = new GameObject(new Vector2(10 * 64, 200), GameObjectType.GoldSkull, m_GameObjects.Count, 0, false);
+			this.AddGameObject(skull);
+
+			// .....
 
 			// Allocate bulletPool last
 			m_BulletPoolStart = m_GameObjects.Count;
@@ -158,20 +172,12 @@ namespace Server.GameSpecific
 
 		private bool IsUpdateable(GameObjectType t)
         {
-
 			if (t == GameObjectType.Player || t == GameObjectType.EnemyBlueMinion || t == GameObjectType.PlayerProjectile)
 			{
 				return true;
 			}
 
 			return false;
-
-            //if (t != GameObjectType.Wall && t != GameObjectType.Spike && t != GameObjectType.Platform && t != GameObjectType.Empty)
-            //{
-            //    return true;
-            //}
-
-            //return false;
         }
 
 		public int NumObjects()
@@ -231,18 +237,17 @@ namespace Server.GameSpecific
 
             if (action == PRESS)
             {
-				// Right 
-				if (key == 3)
+				if (key == RIGHT_K)
 				{
+					player.m_Facing = GameObject.Facing.Right;
 					velocity.X = 6.0f;
 				}
-				// Left
-				else if (key == 0)
+				else if (key == LEFT_K)
 				{
+					player.m_Facing = GameObject.Facing.Left;
 					velocity.X = -6.0f;
 				}
-				// Jump
-				else if (key == 22)
+				else if (key == JUMP_K)
 				{
 					// Would need to check if it was grounded
 					if (player.Grounded)
@@ -251,8 +256,7 @@ namespace Server.GameSpecific
 						player.Grounded = false;
 					}
 				}
-				// Shoot
-				else if (key == 57)
+				else if (key == SHOOT_K)
 				{
 					for(int i = m_BulletPoolStart; i < (m_BulletPoolStart + BULLET_POOL_SIZE); ++i)
 					{
@@ -270,10 +274,9 @@ namespace Server.GameSpecific
 			}
             else
             {
-                // Right/Left
-                if (key == 3 || key == 0)
+                if (key == RIGHT_K || key == LEFT_K)
                 {
-                    velocity.X = 0.0f;// = new Vector2(6.0f, 0.0f);
+                    velocity.X = 0.0f;
                 }
             }
 
@@ -301,7 +304,6 @@ namespace Server.GameSpecific
                 {
                     UpdateSimulation((float)DELTA_TICK);
                     accumulator -= DELTA_TICK;
-                    //Console.WriteLine(string.Format("Time now elapsed seconds: {0} , ticks {1}", Timer.Elapsed.TotalSeconds, ++ticks));
                 }
             }
         }
@@ -348,7 +350,8 @@ namespace Server.GameSpecific
         public void Shutdown()
         {
             Console.WriteLine("Shutting down Game sim");
-            m_ShouldQuit = true;
+			// Close down the Run Thread
+			m_ShouldQuit = true;
         }
 	}
 }
