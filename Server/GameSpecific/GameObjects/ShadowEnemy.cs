@@ -10,7 +10,7 @@ namespace Server.GameSpecific.GameObjects
 	class ShadowEnemy : GameObject
 	{
 		#region Constants
-		const float DT = 1.0f / 60.0f;
+		const float DT = 1.0f / 50.0f;
 		const float NUM_FRAMES_X = 4;
 		const float NUM_FRAMES_Y = 10;
 		const float ATTK_COUNT = 2.5f;
@@ -35,10 +35,9 @@ namespace Server.GameSpecific.GameObjects
 		bool m_CanSwitchDir = true;
         private List<GameObject> m_Players = new List<GameObject>();
 
-        public ShadowEnemy(Vector2 p, GameObjectType obj_id, int unq_id, int isClient, bool updatable) :
-			base(p, obj_id, unq_id, isClient, updatable)
+        public ShadowEnemy(Vector2 p, GameObjectType obj_id, int unq_id, int isClient, bool updatable, Vector2 frameSize, ColliderOffset coloffset) :
+			base(p, obj_id, unq_id, isClient, updatable, frameSize, coloffset)
 		{
-			m_Bounds = new Rectangle(0, 0, 32, 32);
 		}
 
 		public override void Update()

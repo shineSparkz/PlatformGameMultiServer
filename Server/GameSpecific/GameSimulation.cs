@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Timers;
 using System.Diagnostics;
+using System.IO;
 
 using Microsoft.Xna.Framework;
 
@@ -66,6 +67,7 @@ namespace Server.GameSpecific
         private float m_MapHeight = 1080;
 		private int m_PlayersInGameSession = 0;
 		private int m_BulletPoolStart = 0;
+        private double m_ElapsedTime = 0;
 
 
 		public GameSimulation()
@@ -82,6 +84,11 @@ namespace Server.GameSpecific
 		{
 			return m_PlayersInGameSession;
 		}
+
+        public double GetTotalTime()
+        {
+            return m_ElapsedTime;
+        }
 
         public float MapWidth()
         {
@@ -116,38 +123,157 @@ namespace Server.GameSpecific
 
 		public void LoadLevel(int levelNumber)
 		{
-			//**************************************************88
-			// TODO : Load level in from client request
-			m_GameLoaded = true;
+            int count = 0;
+            int y = 0;
+            string line;
 
+            int CellSize = 0;
+            int MapWidth = 0;
+            int MapHeight = 0;
+            int MapRows = 0;
+            int MapCols = 0;
+
+            // Read the file and display it line by line.
+            System.IO.StreamReader file = new System.IO.StreamReader(string.Format("obj_map_{0}.txt", levelNumber));
+            while ((line = file.ReadLine()) != null)
+            {
+                if (count == 0)
+                {
+                    CellSize = Convert.ToInt32(line);
+                }
+                else if (count == 1)
+                {
+                    MapWidth = Convert.ToInt32(line);
+                }
+                else if (count == 2)
+                {
+                    MapHeight = Convert.ToInt32(line);
+
+                    MapRows = MapHeight / CellSize;
+                    MapCols = MapWidth / CellSize;
+
+                    // TODO Set level bounds here
+                }
+                else
+                {
+                    if (string.IsNullOrEmpty(line))
+                        break;
+
+                    String[] spl = line.Split(',');
+
+                    for (int x = 0; x < spl.Length; ++x)
+                    {
+                        int parsedId = Convert.ToInt32(spl[x]);
+                        GameObjectType type = (GameObjectType)parsedId;
+
+                        switch (type)
+                        {
+                            case GameObjectType.DestructablePlatform:
+                                {
+                                    GameObject box = new GameObject(new Vector2(x * 64, y * 64), GameObjectType.DestructablePlatform, m_GameObjects.Count, 0, false, new Vector2(64, 64), new ColliderOffset(0));
+                                    this.AddGameObject(box);
+                                }
+                                break;
+                            case GameObjectType.EnemyBlueMinion:
+                                {
+                                    GameObject enemy = new BlueMinionEnemy(new Vector2(x * 64, y * 64), GameObjectType.EnemyBlueMinion, m_GameObjects.Count, 0, true, new Vector2(45, 66), new ColliderOffset(9));
+                                    this.AddGameObject(enemy);
+                                }
+                                break;
+                            case GameObjectType.EnemyDisciple:
+                                {
+                                    GameObject disciple = new DiscipleEnemy(new Vector2(x * 64, y * 64), GameObjectType.EnemyDisciple, m_GameObjects.Count, 0, true, new Vector2(45 * 2, 51 * 2), new ColliderOffset(25, 25, 20, 6));
+                                    this.AddGameObject(disciple);
+                                }
+                                break;
+                            case GameObjectType.EnemyShadow:
+                                {
+                                    GameObject shadow = new ShadowEnemy(new Vector2(x * 64, y * 64), GameObjectType.EnemyShadow, m_GameObjects.Count, 0, true, new Vector2(80, 70), new ColliderOffset(12, 12, 4, 0));
+                                    this.AddGameObject(shadow);
+                                }
+                                break;
+                            case GameObjectType.Exit:
+                                {
+                                    this.AddGameObject(new Exit(new Vector2(x * 64, y * 64), GameObjectType.Exit, m_GameObjects.Count, 0, true, new Vector2(128, 128), new ColliderOffset(36, 36, 36, 10)));
+                                }
+                                break;
+                            case GameObjectType.GoldSkull:
+                                {
+                                    GameObject skull = new GameObject(new Vector2(x * 64, y * 64), GameObjectType.GoldSkull, m_GameObjects.Count, 0, false, new Vector2(32, 32), new ColliderOffset(2));
+                                    this.AddGameObject(skull);
+                                }
+                                break;
+                            case GameObjectType.Spike:
+                                {
+                                    GameObject spike = new GameObject(new Vector2(x * 64, y * 64), GameObjectType.Spike, m_GameObjects.Count, 0, false, new Vector2(64, 64), new ColliderOffset(12, 12, 18, 0));
+                                    this.AddGameObject(spike);
+                                }
+                                break;
+                            case GameObjectType.Wall:
+                                {
+                                    this.AddGameObject(new GameObject(new Vector2(x * 64, y * 64), GameObjectType.Wall, m_GameObjects.Count, 0, false, new Vector2(64, 64), new ColliderOffset(0)));
+                                }
+                                break;
+                            default:
+                                break;
+                        }
+                    }
+
+                    y++;
+                }
+
+                count++;
+            }
+
+            file.Close();
+
+            //**************************************************
+            // TODO : Load level in from client request
+            m_GameLoaded = true;
+
+            /*
+            // Add Walls
 			for (int i = 0; i < 12; ++i)
 			{
-				this.AddGameObject(new GameObject(new Vector2(i * 64, 450), GameObjectType.Wall, m_GameObjects.Count, 0, false));
+				this.AddGameObject(new GameObject(new Vector2(i * 64, 450), GameObjectType.Wall, m_GameObjects.Count, 0, false, new Vector2(64,64), new ColliderOffset(0)));
 			}
 
-			this.AddGameObject(new GameObject(new Vector2(7 * 64, 350), GameObjectType.Wall, m_GameObjects.Count, 0, false));
+			this.AddGameObject(new GameObject(new Vector2(7 * 64, 350), GameObjectType.Wall, m_GameObjects.Count, 0, false, new Vector2(64, 64), new ColliderOffset(0)));
 
-			// Add enemy
-			GameObject enemy = new BlueMinionEnemy(new Vector2(200, 200), GameObjectType.EnemyBlueMinion, m_GameObjects.Count, 0, true);
-			this.AddGameObject(enemy);
+            // Add enemy
+            GameObject enemy = new BlueMinionEnemy(new Vector2(200, 200), GameObjectType.EnemyBlueMinion, m_GameObjects.Count, 0, true, new Vector2(45, 66), new ColliderOffset(9));
+            this.AddGameObject(enemy);
 
 			// Add Exit
-			this.AddGameObject(new GameObject(new Vector2(14 * 64, 400), GameObjectType.Exit, m_GameObjects.Count, 0, false));
+			this.AddGameObject(new Exit(new Vector2(14 * 64, 400), GameObjectType.Exit, m_GameObjects.Count, 0, true, new Vector2(128, 128), new ColliderOffset(36,36,36,10)));
 
-			// Add Collectable skull (for exp)
-			GameObject skull = new GameObject(new Vector2(10 * 64, 200), GameObjectType.GoldSkull, m_GameObjects.Count, 0, false);
-			this.AddGameObject(skull);
+            // Add Collectable skull (for exp)
+            GameObject skull = new GameObject(new Vector2(10 * 64, 200), GameObjectType.GoldSkull, m_GameObjects.Count, 0, false, new Vector2(32, 32), new ColliderOffset(2));
+            this.AddGameObject(skull);
 
-            // .....
-            GameObject shadow = new ShadowEnemy(new Vector2(300, 450 - 64), GameObjectType.EnemyShadow, m_GameObjects.Count, 0, true);
+            // Add Shadow
+            GameObject shadow = new ShadowEnemy(new Vector2(300, 450 - 64), GameObjectType.EnemyShadow, m_GameObjects.Count, 0, true, new Vector2(80, 70), new ColliderOffset(12,12,4,0));
             this.AddGameObject(shadow);
 
-			// Allocate bulletPool last
-			m_BulletPoolStart = m_GameObjects.Count;
+            // Add Disciple
+            GameObject disciple = new DiscipleEnemy(new Vector2(370, 450 - 64), GameObjectType.EnemyDisciple, m_GameObjects.Count, 0, true, new Vector2(45*2, 51*2), new ColliderOffset(25,25,20,6));
+            this.AddGameObject(disciple);
+
+            // Add Desctructable box
+            GameObject box = new GameObject(new Vector2(590, 450-64), GameObjectType.DestructablePlatform, m_GameObjects.Count, 0, false, new Vector2(64, 64), new ColliderOffset(0));
+            this.AddGameObject(box);
+
+            // Add Spike hazard
+            GameObject spike = new GameObject(new Vector2(520, 450-64), GameObjectType.Spike, m_GameObjects.Count, 0, false, new Vector2(64, 64), new ColliderOffset(12, 12, 18, 0));
+            this.AddGameObject(spike);
+            */
+
+            // Allocate bulletPool last
+            m_BulletPoolStart = m_GameObjects.Count;
 			for (int i = 0; i < BULLET_POOL_SIZE; ++i)
 			{
-				GameObject bullet = new PlayerProjectile(Vector2.Zero, GameObjectType.PlayerProjectile, m_GameObjects.Count, 0, true);
-				bullet.Active = false;
+				GameObject bullet = new PlayerProjectile(Vector2.Zero, GameObjectType.PlayerProjectile, m_GameObjects.Count, 0, true, new Vector2(32, 32), new ColliderOffset(2));
+                bullet.Active = false;
 				this.AddGameObject(bullet);
 			}
 		}
@@ -176,7 +302,7 @@ namespace Server.GameSpecific
         {
 			if (t == GameObjectType.Player || t == GameObjectType.EnemyBlueMinion || t == GameObjectType.PlayerProjectile
                 || t == GameObjectType.EnemyShadow || t == GameObjectType.DestructablePlatform || t == GameObjectType.EnemyDisciple 
-                || t == GameObjectType.EnemyProjectile || t == GameObjectType.EnemyTaurus )
+                || t == GameObjectType.EnemyProjectile || t == GameObjectType.EnemyTaurus || t == GameObjectType.Exit )
 			{
 				return true;
 			}
@@ -294,14 +420,14 @@ namespace Server.GameSpecific
             Stopwatch Timer = new Stopwatch();
             Timer.Start();
 
-            double currentTime = Timer.Elapsed.TotalSeconds;
+            m_ElapsedTime = Timer.Elapsed.TotalSeconds;
             double accumulator = 0.0;
 
             while (!m_ShouldQuit)
             {
                 double newTime = Timer.Elapsed.TotalSeconds;
-                double frameTime = newTime - currentTime;
-                currentTime = newTime;
+                double frameTime = newTime - m_ElapsedTime;
+                m_ElapsedTime = newTime;
 
                 accumulator += frameTime;
 

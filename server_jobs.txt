@@ -2,25 +2,18 @@ Server Jobs
 
 JOBS
 =============
-Fri night
-------
-- Add disciple enemy
-- Add destructable boxes
-- Add spike hazards
-- Make map
 
 Sunday
 ----
-- Level Loading, both client and server
-- QuadTree server
 - Player health and death conditions
+- Enemy Health
+- Security layer	**
+- QuadTree server
 - Client needs to only render whats in his view too
 
 Monday
 ----
 - Mac port			**
-- Security layer	**
-
 
 DONE
 - Handling death
@@ -29,3 +22,10 @@ DONE
 - Display leader board based on exp on the client
 - Add level exit
 - Add collectables
+- Sort all colliders out properly on server
+- Fix memory leaks
+- Add disciple enemy
+- Add destructable boxes
+- Add spike hazards
+- Make map
+- Level Loading(map parsing, both client and server

@@ -35,8 +35,8 @@ namespace Server.GameSpecific.GameObjects
 		private bool m_Hurt = false;
 
 
-        public Player(Vector2 p, GameObjectType obj_id, int unq_id, int isClient, bool updatable, int clientId) :
-            base(p, obj_id, unq_id, isClient, updatable)
+        public Player(Vector2 p, GameObjectType obj_id, int unq_id, int isClient, bool updatable, int clientId, Vector2 frameSize, ColliderOffset coloffset) :
+            base(p, obj_id, unq_id, isClient, updatable, frameSize, coloffset)
         {
             this.CreateContactPoints();
 
@@ -132,7 +132,7 @@ namespace Server.GameSpecific.GameObjects
 			// This needs to be from the qyadtree
             foreach (GameObject colTest in GameSimulation.instance.GetObjects())
             {
-				if (colTest.TypeId() == GameObjectType.Wall)
+				if ( (colTest.TypeId() == GameObjectType.Wall || colTest.TypeId() == GameObjectType.DestructablePlatform) && colTest.Active)
 				{
 					for (int dir = 0; dir < 4; dir++)
 					{

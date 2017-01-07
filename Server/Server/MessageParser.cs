@@ -299,8 +299,8 @@ namespace Server.Server
 					m_ServerManager.SetPlayerHandle(clientId, m_GameSimulation.NumObjects());
 
 					// Add new client to game sim
-					GameObject newPlayer = new Player(Vector2.Zero, GameObjectType.Player, m_GameSimulation.NumObjects(), 1, true, clientId);
-					m_GameSimulation.AddGameObject(newPlayer);
+					GameObject newPlayer = new Player(Vector2.Zero, GameObjectType.Player, m_GameSimulation.NumObjects(), 1, true, clientId, new Vector2(128, 128), new ColliderOffset(46,46,50,0));
+                    m_GameSimulation.AddGameObject(newPlayer);
 
 					// Create Packet of one game object (this player) to send to other clients already on server with just this player. *note* last param (isClient) is set to 0 intentionally
 					PacketDefs.MultiGameObjectPacket thisClientPacket = new PacketDefs.MultiGameObjectPacket(1);

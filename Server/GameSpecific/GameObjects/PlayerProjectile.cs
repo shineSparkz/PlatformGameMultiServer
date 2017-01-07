@@ -16,8 +16,8 @@ namespace Server.GameSpecific.GameObjects
 		private float m_LifeTick = 0.0f;
 		private List<GameObject> m_CollisionObjects = new List<GameObject>();
 
-		public PlayerProjectile(Vector2 p, GameObjectType obj_id, int unq_id, int isClient, bool updatable) :
-            base(p, obj_id, unq_id, isClient, updatable)
+		public PlayerProjectile(Vector2 p, GameObjectType obj_id, int unq_id, int isClient, bool updatable, Vector2 frameSize, ColliderOffset coloffset) :
+            base(p, obj_id, unq_id, isClient, updatable, frameSize, coloffset)
         {
 			if (m_CollisionObjects.Count == 0)
 			{
@@ -30,8 +30,6 @@ namespace Server.GameSpecific.GameObjects
 					}
 				}
 			}
-
-			m_Bounds = new Rectangle(0, 0, 16, 16);
 		}
 
         public bool WantToCollideWith(GameObjectType t)
@@ -67,7 +65,17 @@ namespace Server.GameSpecific.GameObjects
 						if (this.Bounds().Intersects(go.Bounds()))
 						{
 							go.Active = false;
-							this.Active = false;
+
+                            // If this object is not set to update and send out packets every frame then can force it here as they need to know its not active
+                            if (!go.IsUpdatable())
+                            {
+                                PacketDefs.PlayerInputUpdatePacket updatePacket = new PacketDefs.PlayerInputUpdatePacket(
+                                    go.UnqId(), go.Position.X, go.Position.Y, go.FrameX(), go.FrameY(), go.Active);
+                                ServerManager.instance.SendAllUdp(fastJSON.JSON.ToJSON(
+                                    updatePacket, PacketDefs.JsonParams()));
+                            }
+
+                            this.Active = false;
 
                             // Add exp for killimg enemy
                             GameClient client = ServerManager.instance.GetClient(InvokedBy);

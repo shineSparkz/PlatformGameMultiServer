@@ -11,40 +11,70 @@ namespace Server.GameSpecific
 {
 	public enum GameObjectType
 	{
+        // I have marked the used ones, made a few cuts for deadline
 		Empty,
-		Wall,
-		Player,
-		Exit,
+		Wall,                       //<<
+		Player,                     //<<
+		Exit,                       //<<
 		Slime,
 		Skull_Collect,
 		Walking_Enemy,
 		Health,
 		Platform,
-		Spike = 9,
+		Spike = 9,                  //<<
 		SpikeD = 10,
 		SpikeL = 11,
 		SpikeR = 12,
-		EnemyBlueMinion = 13,
+		EnemyBlueMinion = 13,       //<<
 		EnemyMage,
-		EnemyDisciple,
+		EnemyDisciple,              //<<
 		EnemyTaurus,
-		EnemyShadow,
+		EnemyShadow,                //<<
 		EnemyGreenHead,
 		DissapearingPlatform,
-		DestructablePlatform,
+		DestructablePlatform,       //<<
 		DropHazard,
 		BouncingBoulder,
 		BossTrigger,
 		CheckPoint,
-		GoldSkull,
+		GoldSkull,                  //<<
 
 		NetworkType,
 
 		//=================
 		EnemyProjectile,
-		PlayerProjectile,
+		PlayerProjectile,           //<<
 		NUM_TYPES
 	}
+
+    public class ColliderOffset
+    {
+        public int left, right, top, bottom;
+
+        public ColliderOffset()
+        {
+            this.left = 0;
+            this.right = 0;
+            this.top = 0;
+            this.bottom = 0;
+        }
+
+        public ColliderOffset(int l, int r, int t, int b)
+        {
+            this.left = l;
+            this.right = r;
+            this.top = t;
+            this.bottom = b;
+        }
+
+        public ColliderOffset(int lrtb)
+        {
+            this.left = lrtb;
+            this.right = lrtb;
+            this.top = lrtb;
+            this.bottom = lrtb;
+        }
+    };
 
 	public class GameObject
 	{
@@ -60,6 +90,7 @@ namespace Server.GameSpecific
 		protected bool m_Active = true;
         protected float frameX = 0.0f;
         protected float frameY = 0.0f;
+        protected ColliderOffset m_ColliderOffset = new ColliderOffset();
 
         public bool Grounded
         {
@@ -94,9 +125,10 @@ namespace Server.GameSpecific
 			set
 			{
 				m_Position = value;
-				m_Bounds.X = (int)m_Position.X;
-				m_Bounds.Y = (int)m_Position.Y;
-			}	
+
+                m_Bounds.X = (int)m_Position.X + m_ColliderOffset.left;
+                m_Bounds.Y = (int)m_Position.Y + m_ColliderOffset.top;
+            }	
 		}
 
         public Vector2 Velocity;
@@ -141,35 +173,17 @@ namespace Server.GameSpecific
         {
             get; set;
         }
-		
+
         //----------------------------------------
-		public GameObject()
+		public GameObject(Vector2 p, GameObjectType obj_id, int unq_id, int isClient, bool updatable, Vector2 frameSize, ColliderOffset coloffset)
 		{
-			m_Bounds = new Rectangle(0, 0, 64, 64);
-			m_Position = Vector2.Zero;
-			m_TypeId = GameObjectType.Empty;
-			m_UniqueId = -1;
-            IsClient = 0;
-            m_IsUpdatable = false;
-            Grounded = true;
-			Active = true;
-		}
+            m_ColliderOffset = coloffset;
+            m_Bounds = new Rectangle(
+                (int)p.X + m_ColliderOffset.left,
+                (int)p.Y + m_ColliderOffset.top,
+                (int)frameSize.X - (m_ColliderOffset.right + m_ColliderOffset.left),
+                (int)frameSize.Y - (m_ColliderOffset.top + m_ColliderOffset.bottom));
 
-		public GameObject(GameObjectType obj_id, int unq_id, int isClient, bool updatable)
-		{
-            m_Bounds = new Rectangle(0, 0, 64, 64);
-            Position = Vector2.Zero;
-            m_TypeId = obj_id;
-			m_UniqueId = unq_id;
-            IsClient = isClient;
-            m_IsUpdatable = updatable;
-            Grounded = true;
-			Active = true;
-		}
-
-		public GameObject(Vector2 p, GameObjectType obj_id, int unq_id, int isClient, bool updatable)
-		{
-            m_Bounds = new Rectangle(0, 0, 64, 64);
             Position = p;
             m_TypeId = obj_id;
             m_UniqueId = unq_id;

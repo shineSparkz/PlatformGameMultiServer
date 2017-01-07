@@ -91,6 +91,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="GameSpecific\GameObjects\BlueMinionEnemy.cs" />
+    <Compile Include="GameSpecific\GameObjects\DiscipleEnemy.cs" />
+    <Compile Include="GameSpecific\GameObjects\Exit.cs" />
     <Compile Include="GameSpecific\GameObjects\Player.cs" />
     <Compile Include="GameSpecific\GameObjects\PlayerProjectile.cs" />
     <Compile Include="GameSpecific\GameObjects\ShadowEnemy.cs" />

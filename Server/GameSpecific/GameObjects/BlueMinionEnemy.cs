@@ -10,7 +10,7 @@ namespace Server.GameSpecific.GameObjects
 {
     public class BlueMinionEnemy : GameObject
     {
-        const float DT = 1.0f / 60.0f;
+        const float DT = 1.0f / 50.0f;
         const float ATTK_COUNT = 1.0f;
         const float k_MoveToPlayerDist = 560.0f;
         const float k_MinChargeDistance = 512;
@@ -28,10 +28,9 @@ namespace Server.GameSpecific.GameObjects
         private int m_PickedTarget = 0;
         private int m_PlayerTargetIndex = 0;
 
-        public BlueMinionEnemy(Vector2 p, GameObjectType obj_id, int unq_id, int isClient, bool updatable) :
-            base(p, obj_id, unq_id, isClient, updatable)
+        public BlueMinionEnemy(Vector2 p, GameObjectType obj_id, int unq_id, int isClient, bool updatable, Vector2 frameSize, ColliderOffset coloffset) :
+            base(p, obj_id, unq_id, isClient, updatable, frameSize, coloffset)
         {
-			m_Bounds = new Rectangle(0, 0, 24, 24);
 		}
 
 		public override void Start()
