@@ -6,7 +6,6 @@ using Server.Utils;
 using Server.GameSpecific;
 using Server.GameSpecific.GameObjects;
 
-
 namespace Server.Server
 {
 	public class MessageParser
@@ -19,7 +18,6 @@ namespace Server.Server
 		{
 			m_GameSimulation = gs;
 			m_ServerManager = sm;
-
 			MessageFunctions = new Dictionary<PacketDefs.ID, Func<Dictionary<string, object>, bool>>();
 
 			MessageFunctions[PacketDefs.ID.IN_UDP_Input] = InputMsg;
@@ -29,7 +27,6 @@ namespace Server.Server
             MessageFunctions[PacketDefs.ID.IN_TCP_StartGame] = StartGameMsg;
 			MessageFunctions[PacketDefs.ID.IN_TCP_ExpQueery] = ExpQueeryMsg;
             MessageFunctions[PacketDefs.ID.IN_TCP_LeaderboardRequest] = LeaderboardRequestMsg;
-
         }
 
         public void ParseMessage(string msg)
@@ -60,7 +57,7 @@ namespace Server.Server
 			}
 		}
 
-        // ---- Functors ----
+        // ---- Function Pointers ----
         private bool CreateAccountMsg(Dictionary<string, object> json)
         {
             Logger.Log("Got Create account message");

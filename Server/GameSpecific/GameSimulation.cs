@@ -55,9 +55,10 @@ namespace Server.GameSpecific
         {
             return Rand.Next(min, max);
         }
-		#endregion
+        #endregion
 
-		private List<GameObject> m_GameObjects = new List<GameObject>();
+        #region Data
+        private List<GameObject> m_GameObjects = new List<GameObject>();
         private List<GameObject> m_UpdateObjects = new List<GameObject>();
         private Rectangle m_LevelBounds;
 		private bool m_GameLoaded = false;
@@ -68,57 +69,132 @@ namespace Server.GameSpecific
 		private int m_PlayersInGameSession = 0;
 		private int m_BulletPoolStart = 0;
         private double m_ElapsedTime = 0;
+        #endregion
 
-
-		public GameSimulation()
+        public GameSimulation()
 		{
             m_LevelBounds = new Rectangle(0, 0, (int)m_MapWidth, (int)m_MapHeight);
 		}
 
-        public Rectangle LevelBounds()
+        public void Run()
         {
-            return m_LevelBounds;
+            Stopwatch Timer = new Stopwatch();
+            Timer.Start();
+
+            m_ElapsedTime = Timer.Elapsed.TotalSeconds;
+            double accumulator = 0.0;
+
+            while (!m_ShouldQuit)
+            {
+                double newTime = Timer.Elapsed.TotalSeconds;
+                double frameTime = newTime - m_ElapsedTime;
+                m_ElapsedTime = newTime;
+
+                accumulator += frameTime;
+
+                while (accumulator >= DELTA_TICK)
+                {
+                    UpdateSimulation((float)DELTA_TICK);
+                    accumulator -= DELTA_TICK;
+                }
+            }
         }
 
-		public int GetPlayersInGame()
-		{
-			return m_PlayersInGameSession;
-		}
-
-        public double GetTotalTime()
+        private void UpdateSimulation(float dt)
         {
-            return m_ElapsedTime;
+            // Loop through game objects
+            for (int i = 0; i < m_UpdateObjects.Count; ++i)
+            {
+                GameObject gameObj = m_UpdateObjects[i];
+
+                if (gameObj != null)
+                {
+                    // We will send a packet to each client from updateable things such as enemies
+                    gameObj.Update();
+
+                    // Send this player to all other clients, ensure we send one update when deactivated
+                    if (!gameObj.SentInactivePacket)
+                    {
+                        // Send out the new position update here
+                        PacketDefs.PlayerInputUpdatePacket updatePacket = new PacketDefs.PlayerInputUpdatePacket(
+                            gameObj.UnqId(), gameObj.Position.X, gameObj.Position.Y, gameObj.FrameX(), gameObj.FrameY(), gameObj.Active);
+
+                        ServerManager.instance.SendAllUdp(fastJSON.JSON.ToJSON(
+                            updatePacket, PacketDefs.JsonParams()));
+                    }
+
+                    if (!gameObj.Active && !gameObj.SentInactivePacket)
+                    {
+                        // So only send one packet out when deactivated
+                        // This will be set back to false when Active prop is set to true
+                        gameObj.SentInactivePacket = true;
+                    }
+                }
+            }
+
+            if (m_ShouldClearData)
+            {
+                m_ShouldClearData = false;
+                ClearGameData();
+            }
         }
 
-        public float MapWidth()
-        {
-            return m_MapWidth;
-        }
-
-        public float MapHeight()
-        {
-            return m_MapHeight;
-        }
-        
-		public bool IsGameDataLoaded()
+		public void InputUpdate(int handle, int key, int action, int clientId)
 		{
-			return m_GameLoaded;
-		}
+			if (m_ShouldClearData || (handle >= m_GameObjects.Count) || handle < 0)
+				return;
 
-		public void ScheduleClearGameData()
-		{
-			m_ShouldClearData = true;
-		}
+			GameObject player = m_GameObjects[handle];
+            Vector2 velocity = player.Velocity;
 
-		public void ClearGameData()
-		{
-			// Level has ended
-			m_UpdateObjects.Clear();
-			m_GameObjects.Clear();
-			m_GameLoaded = false;
-			m_PlayersInGameSession = 0;
+            if (action == PRESS)
+            {
+				if (key == RIGHT_K)
+				{
+					player.m_Facing = GameObject.Facing.Right;
+					velocity.X = 6.0f;
+				}
+				else if (key == LEFT_K)
+				{
+					player.m_Facing = GameObject.Facing.Left;
+					velocity.X = -6.0f;
+				}
+				else if (key == JUMP_K)
+				{
+					// Would need to check if it was grounded
+					if (player.Grounded)
+					{
+						velocity.Y = -16.0f;
+						player.Grounded = false;
+					}
+				}
+				else if (key == SHOOT_K)
+				{
+					for(int i = m_BulletPoolStart; i < (m_BulletPoolStart + BULLET_POOL_SIZE); ++i)
+					{
+						if(!m_GameObjects[i].Active)
+						{
+							GameObject bullet = m_GameObjects[i];
+							bullet.Active = true;
+							bullet.m_Facing = player.m_Facing;
+							bullet.Position = player.Position + new Vector2(64, 64);
+							bullet.Velocity.X = 20 * (float)bullet.m_Facing;
+                            bullet.InvokedBy = clientId;
+							break;
+						}
+					}
+				}
+			}
+            else
+            {
+                if (key == RIGHT_K || key == LEFT_K)
+                {
+                    velocity.X = 0.0f;
+                }
+            }
 
-			ServerManager.instance.ResetClientHandles();
+            // Just set velocity of player here and can process it in proper loop
+            player.Velocity = velocity;
 		}
 
 		public void LoadLevel(int levelNumber)
@@ -280,7 +356,7 @@ namespace Server.GameSpecific
 				this.AddGameObject(bullet);
 			}
 		}
-
+        
 		public void AddGameObject(GameObject go)
 		{
 			m_GameObjects.Add(go);
@@ -295,38 +371,80 @@ namespace Server.GameSpecific
 				AddNewPlayerToSession();
 			}
 		}
-
+        
 		public void AddNewPlayerToSession()
 		{
 			++m_PlayersInGameSession;
 		}
+        
+        public void ScheduleClearGameData()
+		{
+			m_ShouldClearData = true;
+		}
+        
+		public void ClearGameData()
+		{
+			// Level has ended
+			m_UpdateObjects.Clear();
+			m_GameObjects.Clear();
+			m_GameLoaded = false;
+			m_PlayersInGameSession = 0;
 
-		private bool IsUpdateable(GameObjectType t)
+			ServerManager.instance.ResetClientHandles();
+		}
+        
+        public void Shutdown()
         {
-			if (t == GameObjectType.Player || t == GameObjectType.EnemyBlueMinion || t == GameObjectType.PlayerProjectile
-                || t == GameObjectType.EnemyShadow || t == GameObjectType.DestructablePlatform || t == GameObjectType.EnemyDisciple 
-                || t == GameObjectType.EnemyProjectile || t == GameObjectType.EnemyTaurus || t == GameObjectType.Exit )
-			{
-				return true;
-			}
-
-			return false;
+            Console.WriteLine("Shutting down Game sim");
+			// Close down the Run Thread
+			m_ShouldQuit = true;
+        }
+        
+        #region Getters
+        public Rectangle LevelBounds()
+        {
+            return m_LevelBounds;
         }
 
-		public int NumObjects()
+		public int GetPlayersInGame()
 		{
-			return m_GameObjects.Count;
+			return m_PlayersInGameSession;
 		}
 
-		public GameObject GetObject(int i)
+        public double GetTotalTime()
+        {
+            return m_ElapsedTime;
+        }
+
+        public float MapWidth()
+        {
+            return m_MapWidth;
+        }
+
+        public float MapHeight()
+        {
+            return m_MapHeight;
+        }
+        
+		public bool IsGameDataLoaded()
 		{
-			return i >= 0 && i < m_GameObjects.Count ? m_GameObjects[i] : null;
+			return m_GameLoaded;
 		}
 
-		public List<GameObject> GetObjects()
-		{
-			return m_GameObjects;
-		}
+        public int NumObjects()
+        {
+            return m_GameObjects.Count;
+        }
+
+        public GameObject GetObject(int i)
+        {
+            return i >= 0 && i < m_GameObjects.Count ? m_GameObjects[i] : null;
+        }
+
+        public List<GameObject> GetObjects()
+        {
+            return m_GameObjects;
+        }
 
         public List<GameObject> GetPlayers()
         {
@@ -343,150 +461,35 @@ namespace Server.GameSpecific
             return ret;
         }
 
-		public bool ArePeopleInGame()
-		{
-			bool peopleStillPlaying = false;
+        public bool ArePeopleInGame()
+        {
+            bool peopleStillPlaying = false;
 
-			// Loop clients, check if all of them are not in game and clear the level data if not
-			foreach (KeyValuePair<int, GameClient> kvp in ServerManager.instance.GetClients())
-			{
-				if (kvp.Value.inGame)
-				{
-					peopleStillPlaying = true;
-					break;
-				}
-			}
-
-			return peopleStillPlaying;
-		}
-
-		public void InputUpdate(int handle, int key, int action, int clientId)
-		{
-			if (m_ShouldClearData || (handle >= m_GameObjects.Count) || handle < 0)
-				return;
-
-			GameObject player = m_GameObjects[handle];
-            Vector2 velocity = player.Velocity;
-
-            if (action == PRESS)
+            // Loop clients, check if all of them are not in game and clear the level data if not
+            foreach (KeyValuePair<int, GameClient> kvp in ServerManager.instance.GetClients())
             {
-				if (key == RIGHT_K)
-				{
-					player.m_Facing = GameObject.Facing.Right;
-					velocity.X = 6.0f;
-				}
-				else if (key == LEFT_K)
-				{
-					player.m_Facing = GameObject.Facing.Left;
-					velocity.X = -6.0f;
-				}
-				else if (key == JUMP_K)
-				{
-					// Would need to check if it was grounded
-					if (player.Grounded)
-					{
-						velocity.Y = -16.0f;
-						player.Grounded = false;
-					}
-				}
-				else if (key == SHOOT_K)
-				{
-					for(int i = m_BulletPoolStart; i < (m_BulletPoolStart + BULLET_POOL_SIZE); ++i)
-					{
-						if(!m_GameObjects[i].Active)
-						{
-							GameObject bullet = m_GameObjects[i];
-							bullet.Active = true;
-							bullet.m_Facing = player.m_Facing;
-							bullet.Position = player.Position + new Vector2(64, 64);
-							bullet.Velocity.X = 20 * (float)bullet.m_Facing;
-                            bullet.InvokedBy = clientId;
-							break;
-						}
-					}
-				}
-			}
-            else
-            {
-                if (key == RIGHT_K || key == LEFT_K)
+                if (kvp.Value.inGame)
                 {
-                    velocity.X = 0.0f;
+                    peopleStillPlaying = true;
+                    break;
                 }
             }
 
-            // Just set velocity of player here and can process it in proper loop
-            player.Velocity = velocity;
-		}
-
-        public void Run()
-        {
-            Stopwatch Timer = new Stopwatch();
-            Timer.Start();
-
-            m_ElapsedTime = Timer.Elapsed.TotalSeconds;
-            double accumulator = 0.0;
-
-            while (!m_ShouldQuit)
-            {
-                double newTime = Timer.Elapsed.TotalSeconds;
-                double frameTime = newTime - m_ElapsedTime;
-                m_ElapsedTime = newTime;
-
-                accumulator += frameTime;
-
-                while (accumulator >= DELTA_TICK)
-                {
-                    UpdateSimulation((float)DELTA_TICK);
-                    accumulator -= DELTA_TICK;
-                }
-            }
+            return peopleStillPlaying;
         }
 
-        private void UpdateSimulation(float dt)
+		private bool IsUpdateable(GameObjectType t)
         {
-            // Loop through game objects
-            for (int i = 0; i < m_UpdateObjects.Count; ++i)
-            {
-				GameObject gameObj = m_UpdateObjects[i];
-
-				if (gameObj != null)
-				{
-					// We will send a packet to each client from updateable things such as enemies
-					gameObj.Update();
-
-					// Send this player to all other clients, ensure we send one update when deactivated
-					if (!gameObj.SentInactivePacket)
-					{
-						// Send out the new position update here
-						PacketDefs.PlayerInputUpdatePacket updatePacket = new PacketDefs.PlayerInputUpdatePacket(
-							gameObj.UnqId(), gameObj.Position.X, gameObj.Position.Y, gameObj.FrameX(), gameObj.FrameY(), gameObj.Active);
-
-						ServerManager.instance.SendAllUdp(fastJSON.JSON.ToJSON(
-							updatePacket, PacketDefs.JsonParams()));
-					}
-
-					if (!gameObj.Active && !gameObj.SentInactivePacket)
-					{
-						// So only send one packet out when deactivated
-						// This will be set back to false when Active prop is set to true
-						gameObj.SentInactivePacket = true;
-					}
-				}
-            }
-
-			if (m_ShouldClearData)
+			if (t == GameObjectType.Player || t == GameObjectType.EnemyBlueMinion || t == GameObjectType.PlayerProjectile
+                || t == GameObjectType.EnemyShadow || t == GameObjectType.DestructablePlatform || t == GameObjectType.EnemyDisciple 
+                || t == GameObjectType.EnemyProjectile || t == GameObjectType.EnemyTaurus || t == GameObjectType.Exit )
 			{
-				m_ShouldClearData = false;
-				ClearGameData();
+				return true;
 			}
-        }
 
-        public void Shutdown()
-        {
-            Console.WriteLine("Shutting down Game sim");
-			// Close down the Run Thread
-			m_ShouldQuit = true;
+			return false;
         }
+        #endregion
 	}
 }
 	

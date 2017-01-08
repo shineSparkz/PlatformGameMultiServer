@@ -386,7 +386,8 @@ namespace Server.GameSpecific.GameObjects
 
             // Send UDP pack with new health
             PacketDefs.PlayerHealthPacket hp = new PacketDefs.PlayerHealthPacket(m_Health);
-            ServerManager.instance.SendUdp(m_ClientId, fastJSON.JSON.ToJSON(hp, PacketDefs.JsonParams()));
+            ServerManager.instance.SendUdp(m_ClientId, 
+                fastJSON.JSON.ToJSON(hp, PacketDefs.JsonParams()));
         }
 
         private bool IsHazard(GameObjectType t)
