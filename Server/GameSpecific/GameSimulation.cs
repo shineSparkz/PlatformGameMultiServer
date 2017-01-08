@@ -144,15 +144,18 @@ namespace Server.GameSpecific
                 else if (count == 1)
                 {
                     MapWidth = Convert.ToInt32(line);
+                    m_MapWidth = (float)MapWidth;
                 }
                 else if (count == 2)
                 {
                     MapHeight = Convert.ToInt32(line);
+                    m_MapHeight = (float)MapHeight;
 
                     MapRows = MapHeight / CellSize;
                     MapCols = MapWidth / CellSize;
 
                     // TODO Set level bounds here
+                    m_LevelBounds = new Rectangle(0, 0, (int)m_MapWidth, (int)m_MapHeight);
                 }
                 else
                 {

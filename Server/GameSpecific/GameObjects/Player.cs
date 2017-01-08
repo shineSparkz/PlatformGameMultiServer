@@ -22,6 +22,11 @@ namespace Server.GameSpecific.GameObjects
 		const float INVINCIBLE_TIME_RESET = 2.0f;
 		#endregion
 
+        public static Vector2 SpawnPosition()
+        {
+            return new Vector2(64, 64);
+        }
+
 		private Point[] points;
         private GameView m_GameView = null;
 		private UInt64 m_StepCounter = 0;
@@ -102,7 +107,7 @@ namespace Server.GameSpecific.GameObjects
 				{
 					//this->m_Renderer->SetColour(sf::Color::White);
 					m_Dying = true;
-					Position = Vector2.Zero;
+                    Position = Player.SpawnPosition();
 					Velocity = Vector2.Zero;
 					frameX = 0;
 				}
@@ -110,8 +115,8 @@ namespace Server.GameSpecific.GameObjects
 				// Check for death
 				if (!GameSimulation.instance.LevelBounds().Contains(m_Bounds))
 				{
-					// TODO : Send death to player msg, reset to a known spawn position
-					this.Position = Vector2.Zero;
+                    // TODO : Send death to player msg, reset to a known spawn position
+                    this.Position = Player.SpawnPosition();
 					Velocity = Vector2.Zero;
 				}
 			}
@@ -210,8 +215,8 @@ namespace Server.GameSpecific.GameObjects
 						// Stop updating this object
 						Active = false;
 
-						// Send Back to previous position
-						this.Position = Vector2.Zero;
+                        // Send Back to previous position
+                        this.Position = Player.SpawnPosition();
 						this.Velocity = Vector2.Zero;
 
 						GameClient client = ServerManager.instance.GetClient(m_ClientId);

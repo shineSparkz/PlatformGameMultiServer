@@ -56,6 +56,7 @@ namespace Server.GameSpecific.GameObjects
                 if (m_ChangetargetTick > 8.0f)
                 {
                     m_PickedTarget = 0;
+                    m_ChangetargetTick = 0.0f;
                 }
             }
 
@@ -108,7 +109,7 @@ namespace Server.GameSpecific.GameObjects
             else if (dist < 1800)
             {
                 double elapsed = GameSimulation.instance.GetTotalTime();
-                Velocity = new Vector2( ((float)Math.Cos(elapsed) * speed) + speed, ((float)Math.Sin(elapsed) * speed) + speed);
+                Velocity = new Vector2((float)Math.Cos(elapsed) * speed, (float)Math.Sin(elapsed) * speed);
             }
 
             // Update Pos

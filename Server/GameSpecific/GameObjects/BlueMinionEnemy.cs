@@ -121,7 +121,6 @@ namespace Server.GameSpecific.GameObjects
                             m_AttackWaitCount = 0.0f;
                             m_AIState = MinionAIState.Charge;
                             m_FoundTarget = 0;
-                            m_PickedTarget = 0;
                         }
                         break;
                     }
@@ -167,6 +166,7 @@ namespace Server.GameSpecific.GameObjects
                         {
                             this.Velocity.X = 0;
                             m_AIState = MinionAIState.Idle;
+                            m_PickedTarget = 0;
                         }
                         break;
                     }
