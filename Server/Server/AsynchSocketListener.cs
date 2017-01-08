@@ -13,10 +13,10 @@ namespace Server.Server
 	{
 		// Thread signal.
 		public ManualResetEvent allDone = new ManualResetEvent(false);
+
 		private ServerManager m_ServerManager = null;
 		private GameSimulation m_GameSimulation = null;
 		private MessageParser m_MessageParser = null;
-
 
         public AsynchSocketListener()
 		{
@@ -105,48 +105,6 @@ namespace Server.Server
             Logger.Log("New client connected to server");
             Logger.Log(string.Format("Number of clients connected {0}.\nNew client TCP Endpoint {1}.\nWaiting for udp connection on port {2}",
                 m_ServerManager.NumClients(), localTcp.RemoteEndPoint, port));
-            
-            /*
-            // ---- Generate a state object to pass around Async calls ----
-            TcpStateObject tcpStateObj = new TcpStateObject();
-			tcpStateObj.tcpSocket = localTcp;
-
-			// ---- Add a new client with this Tcp socket and get the hash ----
-			int hash = m_ServerManager.AddNewClient(tcpStateObj.tcpSocket);
-
-			// ---- Gen a Udp state object on free system port----
-			IPEndPoint localUpdEndPt = new IPEndPoint(IPAddress.Parse(ServerDefs.GetLocalIPAddress()), 0); 
-			UdpClient localUdp = new UdpClient(localUpdEndPt);                     
-
-			UdpStateObject udpStateObj = new UdpStateObject();
-			udpStateObj.endPoint = localUpdEndPt;
-			udpStateObj.udpSocket = localUdp;
-
-			// Resolve system generated port of local udp socket
-			int port = ((IPEndPoint)localUdp.Client.LocalEndPoint).Port;
-			Logger.Log(string.Format("Listening for UDP connection on port {0}", port));
-
-			// Store this in client data
-			m_ServerManager.SetLocalUdpPort(hash, port);
-
-			// **Important -- SEND Register Function and give them their id which they must store, and use in all packets so we know who they are, also send them local udp port that we are listening for them on.
-			m_ServerManager.SendTcp(tcpStateObj.tcpSocket, fastJSON.JSON.ToJSON(new PacketDefs.connectPacket(hash, port), PacketDefs.JsonParams()));
-
-			// ---- Begin Async Tcp receive for this client
-			tcpStateObj.tcpSocket.BeginReceive(tcpStateObj.buffer, 0,                                     
-				ServerDefs.BUFF_SIZE, 0,                                     
-				new AsyncCallback(TcpReadCallback), tcpStateObj                            
-			);
-
-			// ----  The client knows this local udp port, so if/when we get a message from them on this, we can add their end
-			//		 point to the client hash table and connect a local udp Socket to that end point which is also stored and
-			//		 completes the data structure for this client
-			localUdp.BeginReceive(new AsyncCallback(UdpInitialReadCallback), udpStateObj);
-
-			Logger.Log("New client connected to server");
-			Logger.Log(string.Format("Number of clients connected {0}.\nNew client TCP Endpoint {1}.\nWaiting for udp connection on port {2}",
-				m_ServerManager.NumClients(), localTcp.RemoteEndPoint, port));
-            */
 		}
 
 		public void TcpReadCallback(IAsyncResult ar)

@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using System.Net;
 using System.Net.Sockets;
 using System.Data.SQLite;
@@ -16,6 +14,7 @@ namespace Server.Server
 {
     public class ServerManager
     {
+        #region Singleton
         private static ServerManager _instance;
         public static ServerManager instance
         {
@@ -31,10 +30,9 @@ namespace Server.Server
 
             private set {; }
         }
+        #endregion
 
-        // TODO : We need sets of these for each game
         private Dictionary<Int32, GameClient> m_Clients = new Dictionary<int, GameClient>();
-
         private SQLiteConnection m_Database = null;
 
         public ServerManager()
@@ -67,9 +65,6 @@ namespace Server.Server
                 m_Database = new SQLiteConnection("Data Source=PlayerDB.sqlite;Version=3;");
                 m_Database.Open();
             }
-
-            // TODO : Test, can remove this
-            //PrintLeaderBoard();
         }
 
         private bool CheckClientInDatabase(string name)
@@ -316,7 +311,7 @@ namespace Server.Server
             try
             {
                 UdpClient uc = (UdpClient)ar.AsyncState;
-                uc.EndSend(ar); // returns int of bytes sent
+                uc.EndSend(ar);
             }
             catch (Exception e)
             {

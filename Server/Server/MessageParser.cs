@@ -1,14 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using Microsoft.Xna.Framework;
 
 using Server.Utils;
 using Server.GameSpecific;
 using Server.GameSpecific.GameObjects;
 
-using Microsoft.Xna.Framework;
 
 namespace Server.Server
 {
@@ -37,7 +34,6 @@ namespace Server.Server
 
         public void ParseMessage(string msg)
 		{
-			// TODO : This needs to be in some kind of co-routine or thread
 			Dictionary<string, object> JsonData = null;
 
 			try
@@ -325,11 +321,7 @@ namespace Server.Server
 							ServerManager.instance.SendTcp(kvp.Value.tcpSocket, data);
 						}
 					}
-
-					// Set this back , so that the next client will have this as 0, as  they are the client and need the handle
-					//newPlayer.IsClient = 0;
 				}
-
 
 				// Create Packet for list of all clients now to send to new player including himself
 				PacketDefs.MultiGameObjectPacket allClientsPacket =
@@ -365,7 +357,7 @@ namespace Server.Server
 				{
 					player.IsClient = 0;
 				}
-
+                
 				return true;
 			}
 		}

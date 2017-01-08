@@ -24,6 +24,7 @@ namespace Server.GameSpecific.GameObjects
 			Sinking,
 		}
 
+        List<GameObject> m_Players = new List<GameObject>();
 		ShadowAIState m_AIState = ShadowAIState.Idle;
 		float m_AttackWaitCount = 1.0f;
 		float m_MillisPerFrame = 0.1f;
@@ -33,7 +34,6 @@ namespace Server.GameSpecific.GameObjects
         int m_PickedTarget = 0;
         int m_PlayerTargetIndex = 0;
 		bool m_CanSwitchDir = true;
-        private List<GameObject> m_Players = new List<GameObject>();
 
         public ShadowEnemy(Vector2 p, GameObjectType obj_id, int unq_id, int isClient, bool updatable, Vector2 frameSize, ColliderOffset coloffset) :
 			base(p, obj_id, unq_id, isClient, updatable, frameSize, coloffset)
@@ -42,8 +42,6 @@ namespace Server.GameSpecific.GameObjects
 
 		public override void Update()
 		{
-            //if (m_EnemyParent->IsDead())
-            //	return;
             // Resolve new players
             if (m_Players.Count == 0 || m_Players.Count < Server.ServerManager.instance.NumClients())
             {
@@ -312,11 +310,11 @@ namespace Server.GameSpecific.GameObjects
 
 								m_AnimTick = m_MillisPerFrame;
 							}
-							break;
+
+                            break;
 						}
 				}
 			}
-			//m_Collider->SetTopOffset(m_ColHeight);
 		}
 	}
 }

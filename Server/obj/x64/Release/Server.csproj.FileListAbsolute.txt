@@ -4,3 +4,12 @@ E:\Documents\Dropbox\uni\multi\CPPDummyServer\C#\Server\Server\bin\x64\Release\S
 E:\Documents\Dropbox\uni\multi\CPPDummyServer\C#\Server\Server\obj\x64\Release\Server.exe
 E:\Documents\Dropbox\uni\multi\CPPDummyServer\C#\Server\Server\obj\x64\Release\Server.pdb
 E:\Documents\Dropbox\uni\multi\CPPDummyServer\C#\Server\Server\obj\x64\Release\Server.csprojResolveAssemblyReference.cache
+C:\DocumentsC\university\year3\multi\DemonGame\PlatformGameMultiServer\Server\bin\x64\Release\Server.exe.config
+C:\DocumentsC\university\year3\multi\DemonGame\PlatformGameMultiServer\Server\obj\x64\Release\Server.exe
+C:\DocumentsC\university\year3\multi\DemonGame\PlatformGameMultiServer\Server\obj\x64\Release\Server.pdb
+C:\DocumentsC\university\year3\multi\DemonGame\PlatformGameMultiServer\Server\bin\x64\Release\Server.exe
+C:\DocumentsC\university\year3\multi\DemonGame\PlatformGameMultiServer\Server\bin\x64\Release\Server.pdb
+C:\DocumentsC\university\year3\multi\DemonGame\PlatformGameMultiServer\Server\bin\x64\Release\fastJSON.dll
+C:\DocumentsC\university\year3\multi\DemonGame\PlatformGameMultiServer\Server\bin\x64\Release\System.Data.SQLite.dll
+C:\DocumentsC\university\year3\multi\DemonGame\PlatformGameMultiServer\Server\bin\x64\Release\fastJSON.pdb
+C:\DocumentsC\university\year3\multi\DemonGame\PlatformGameMultiServer\Server\obj\x64\Release\Server.csprojResolveAssemblyReference.cache

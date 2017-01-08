@@ -80,24 +80,24 @@ namespace Server.GameSpecific
 	{
         public enum Facing { Left = -1, Right = 1 };
 
-        public Facing m_Facing = Facing.Right;
-
 		protected Rectangle m_Bounds;
         protected Vector2 m_Position;
+        public    Vector2 Velocity;
+        protected ColliderOffset m_ColliderOffset = new ColliderOffset();
         protected GameObjectType m_TypeId;
-        protected int m_UniqueId;
         protected bool m_IsUpdatable;
 		protected bool m_Active = true;
+        protected int m_UniqueId;
         protected float frameX = 0.0f;
         protected float frameY = 0.0f;
-        protected ColliderOffset m_ColliderOffset = new ColliderOffset();
+
+        public Facing m_Facing = Facing.Right;
+		public bool SentInactivePacket = false;
 
         public bool Grounded
         {
             get; set;
         }
-
-		public bool SentInactivePacket = false;
 
 		public bool Active
 		{
@@ -131,8 +131,34 @@ namespace Server.GameSpecific
             }	
 		}
 
-        public Vector2 Velocity;
+        //----------------------------------------
+        public GameObject(Vector2 p, GameObjectType obj_id, int unq_id, int isClient, bool updatable, Vector2 frameSize, ColliderOffset coloffset)
+        {
+            m_ColliderOffset = coloffset;
+            m_Bounds = new Rectangle(
+                (int)p.X + m_ColliderOffset.left,
+                (int)p.Y + m_ColliderOffset.top,
+                (int)frameSize.X - (m_ColliderOffset.right + m_ColliderOffset.left),
+                (int)frameSize.Y - (m_ColliderOffset.top + m_ColliderOffset.bottom));
 
+            Position = p;
+            m_TypeId = obj_id;
+            m_UniqueId = unq_id;
+            IsClient = isClient;
+            m_IsUpdatable = updatable;
+            Grounded = true;
+            Active = true;
+        }
+
+        public virtual void Start()
+        {
+        }
+
+        public virtual void Update()
+        {
+        }
+
+        #region Getters and Setters
         public GameObjectType TypeId()
         {
             return m_TypeId;
@@ -168,37 +194,11 @@ namespace Server.GameSpecific
             return m_Bounds;
         }
 
-        // This is unfortunate, but too late in dev, it's for knowing who has created an object, bullet for example
         public int InvokedBy
         {
+            // This is unfortunate and messy, but too late in dev, it's for knowing who has created an object, bullet for example
             get; set;
         }
-
-        //----------------------------------------
-		public GameObject(Vector2 p, GameObjectType obj_id, int unq_id, int isClient, bool updatable, Vector2 frameSize, ColliderOffset coloffset)
-		{
-            m_ColliderOffset = coloffset;
-            m_Bounds = new Rectangle(
-                (int)p.X + m_ColliderOffset.left,
-                (int)p.Y + m_ColliderOffset.top,
-                (int)frameSize.X - (m_ColliderOffset.right + m_ColliderOffset.left),
-                (int)frameSize.Y - (m_ColliderOffset.top + m_ColliderOffset.bottom));
-
-            Position = p;
-            m_TypeId = obj_id;
-            m_UniqueId = unq_id;
-            IsClient = isClient;
-            m_IsUpdatable = updatable;
-            Grounded = true;
-			Active = true;
-		}
-
-		public virtual void Start()
-        {
-        }
-
-        public virtual void Update()
-        {
-        }
-	}
+        #endregion
+    }
 }

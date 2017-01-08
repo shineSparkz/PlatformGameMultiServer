@@ -17,9 +17,10 @@ namespace Server.GameSpecific.GameObjects
         const int DOWN = 1;
         const int LEFT = 2;
         const int RIGHT = 3;
+        const int MAX_HEALTH = 4;
 		const float DT = 1.0f / 50.0f;
 		const float MAX_FALL_SPEED = 100.0f;
-		const float INVINCIBLE_TIME_RESET = 2.0f;
+		const float INVINCIBLE_TIME_RESET = 1.7f;
 		#endregion
 
         public static Vector2 SpawnPosition()
@@ -29,13 +30,12 @@ namespace Server.GameSpecific.GameObjects
 
 		private Point[] points;
         private GameView m_GameView = null;
-		private UInt64 m_StepCounter = 0;
 		private float m_MillisPerFrame = 0.07f;
 		private float m_AnimTick = 0.0f;
 		private float m_HurtCounter = 0.0f;
 		private int m_ClientId;
 		private int m_NumFramesX;
-		private int m_Health = 100;
+		private int m_Health = MAX_HEALTH;
 		private bool m_Dying = false;
 		private bool m_Hurt = false;
 
@@ -52,7 +52,6 @@ namespace Server.GameSpecific.GameObjects
         public override void Update()
         {
 			m_AnimTick -= DT;
-			++m_StepCounter;
 
 			UpdateAnimation();
 
@@ -88,37 +87,19 @@ namespace Server.GameSpecific.GameObjects
 				{
 					m_HurtCounter += DT;
 
-					//if ((m_StepCounter % 3 == 0))
-						//this->m_Renderer->SetColour(sf::Color::White);
-					//else
-						//this->m_Renderer->SetColour(sf::Color::Red);
-
 					if (m_HurtCounter >= INVINCIBLE_TIME_RESET)
 					{
 						m_HurtCounter = 0.0f;
 						m_Hurt = false;
-
-						//this->m_Renderer->SetColour(sf::Color::White);
 					}
 				}
 
 				// Check for death
-				if (m_Health <= 0 && !m_Dying)
+				if ( (m_Health <= 0 && !m_Dying) || (!GameSimulation.instance.LevelBounds().Contains(m_Bounds)) )
 				{
-					//this->m_Renderer->SetColour(sf::Color::White);
 					m_Dying = true;
-                    Position = Player.SpawnPosition();
-					Velocity = Vector2.Zero;
-					frameX = 0;
-				}
-
-				// Check for death
-				if (!GameSimulation.instance.LevelBounds().Contains(m_Bounds))
-				{
-                    // TODO : Send death to player msg, reset to a known spawn position
-                    this.Position = Player.SpawnPosition();
-					Velocity = Vector2.Zero;
-				}
+                    frameX = 0;
+                }
 			}
         }
 
@@ -132,141 +113,164 @@ namespace Server.GameSpecific.GameObjects
             originalMoveX = predicted_speed.X;
             originalMoveY = predicted_speed.Y;
 
-            //Vector2 position = gameObj.Position;
-
 			// This needs to be from the qyadtree
             foreach (GameObject colTest in GameSimulation.instance.GetObjects())
             {
-				if ( (colTest.TypeId() == GameObjectType.Wall || colTest.TypeId() == GameObjectType.DestructablePlatform) && colTest.Active)
-				{
-					for (int dir = 0; dir < 4; dir++)
-					{
-						if (dir == UP && predicted_speed.Y > 0) continue;
-						if (dir == DOWN && predicted_speed.Y < 0) continue;
-						if (dir == LEFT && predicted_speed.X > 0) continue;
-						if (dir == RIGHT && predicted_speed.X < 0) continue;
+                if ((colTest.TypeId() == GameObjectType.Wall || colTest.TypeId() == GameObjectType.DestructablePlatform) && colTest.Active)
+                {
+                    for (int dir = 0; dir < 4; dir++)
+                    {
+                        if (dir == UP && predicted_speed.Y > 0) continue;
+                        if (dir == DOWN && predicted_speed.Y < 0) continue;
+                        if (dir == LEFT && predicted_speed.X > 0) continue;
+                        if (dir == RIGHT && predicted_speed.X < 0) continue;
 
-						projectedMoveX = (dir >= LEFT ? predicted_speed.X : 0);
-						projectedMoveY = (dir < LEFT ? predicted_speed.Y : 0);
+                        projectedMoveX = (dir >= LEFT ? predicted_speed.X : 0);
+                        projectedMoveY = (dir < LEFT ? predicted_speed.Y : 0);
 
-						while ((colTest.Bounds().Contains(this.points[dir * 2].X + (int)this.Position.X + (int)projectedMoveX,
-							this.points[dir * 2].Y + (int)this.Position.Y + (int)projectedMoveY)
-							||
-							colTest.Bounds().Contains(this.points[dir * 2 + 1].X + (int)this.Position.X + (int)projectedMoveX,
-								this.points[dir * 2 + 1].Y + (int)this.Position.Y + (int)projectedMoveY)))
-						{
-							if (dir == UP)
-								projectedMoveY++;
-							if (dir == DOWN)
-								projectedMoveY--;
-							if (dir == LEFT)
-								projectedMoveX++;
-							if (dir == RIGHT)
-								projectedMoveX--;
-						}
+                        while ((colTest.Bounds().Contains(this.points[dir * 2].X + (int)this.Position.X + (int)projectedMoveX,
+                            this.points[dir * 2].Y + (int)this.Position.Y + (int)projectedMoveY)
+                            ||
+                            colTest.Bounds().Contains(this.points[dir * 2 + 1].X + (int)this.Position.X + (int)projectedMoveX,
+                                this.points[dir * 2 + 1].Y + (int)this.Position.Y + (int)projectedMoveY)))
+                        {
+                            if (dir == UP)
+                                projectedMoveY++;
+                            if (dir == DOWN)
+                                projectedMoveY--;
+                            if (dir == LEFT)
+                                projectedMoveX++;
+                            if (dir == RIGHT)
+                                projectedMoveX--;
+                        }
 
-						if (dir >= LEFT && dir <= RIGHT)
-							predicted_speed.X = projectedMoveX;
-						if (dir >= UP && dir <= DOWN)
-							predicted_speed.Y = projectedMoveY;
-					}
+                        if (dir >= LEFT && dir <= RIGHT)
+                            predicted_speed.X = projectedMoveX;
+                        if (dir >= UP && dir <= DOWN)
+                            predicted_speed.Y = projectedMoveY;
+                    }
 
-					// Resolve contact
-					if (predicted_speed.Y > originalMoveY && originalMoveY < 0)
-					{
-						contactYtop = true;
-					}
+                    // Resolve contact
+                    if (predicted_speed.Y > originalMoveY && originalMoveY < 0)
+                    {
+                        contactYtop = true;
+                    }
 
-					if (predicted_speed.Y < originalMoveY && originalMoveY > 0)
-					{
-						contactYbottom = true;
-					}
+                    if (predicted_speed.Y < originalMoveY && originalMoveY > 0)
+                    {
+                        contactYbottom = true;
+                    }
 
-					if (predicted_speed.X - originalMoveX < -0.01f)
-					{
-						contactRight = true;
-					}
+                    if (predicted_speed.X - originalMoveX < -0.01f)
+                    {
+                        contactRight = true;
+                    }
 
-					if (predicted_speed.X - originalMoveX > 0.01f)
-					{
-						contactLeft = true;
-					}
+                    if (predicted_speed.X - originalMoveX > 0.01f)
+                    {
+                        contactLeft = true;
+                    }
 
-					// Resolve collision from contact
-					if (contactYbottom)
-					{
-						this.Velocity.Y = 0;
-						this.Grounded = true;
-					}
-					else if (contactYtop)
-					{
-						this.Velocity.Y = 0;
-					}
+                    // Resolve collision from contact
+                    if (contactYbottom)
+                    {
+                        this.Velocity.Y = 0;
+                        this.Grounded = true;
+                    }
+                    else if (contactYtop)
+                    {
+                        this.Velocity.Y = 0;
+                    }
 
-					if (contactLeft || contactRight)
-					{
-						this.Velocity.X = 0;
-					}
-				}
-				else if (colTest.TypeId() == GameObjectType.Exit)
-				{
-					if (this.Bounds().Intersects(colTest.Bounds()))
-					{
-						// Stop updating this object
-						Active = false;
+                    if (contactLeft || contactRight)
+                    {
+                        this.Velocity.X = 0;
+                    }
+                }
+                else if (colTest.TypeId() == GameObjectType.Exit)
+                {
+                    if (this.Bounds().Intersects(colTest.Bounds()))
+                    {
+                        // Stop updating this object
+                        Active = false;
 
                         // Send Back to previous position
                         this.Position = Player.SpawnPosition();
-						this.Velocity = Vector2.Zero;
+                        this.Velocity = Vector2.Zero;
 
-						GameClient client = ServerManager.instance.GetClient(m_ClientId);
-						if (client != null)
-						{
-							client.inGame = false;
+                        GameClient client = ServerManager.instance.GetClient(m_ClientId);
+                        if (client != null)
+                        {
+                            client.inGame = false;
 
                             // NOTE** This is the only time we want to update the database (when they finish the level)
                             client.localExpCache += 30;
 
-							// Give this client some experience on database
-							ServerManager.instance.UpdateClientExpDB(client.userName, client.localExpCache);
+                            // Give this client some experience on database
+                            ServerManager.instance.UpdateClientExpDB(client.userName, client.localExpCache);
 
-							// Send him back to the lobby : TODO Get EXP from DB
-							PacketDefs.UpdateExpPacket flp = new PacketDefs.UpdateExpPacket(client.localExpCache, PacketDefs.ID.OUT_TCP_FinishLevel);
-							ServerManager.instance.SendTcp(client.tcpSocket, fastJSON.JSON.ToJSON(flp, PacketDefs.JsonParams()));
+                            // Send him back to the lobby : TODO Get EXP from DB
+                            PacketDefs.UpdateExpPacket flp = new PacketDefs.UpdateExpPacket(client.localExpCache, PacketDefs.ID.OUT_TCP_FinishLevel);
+                            ServerManager.instance.SendTcp(client.tcpSocket, fastJSON.JSON.ToJSON(flp, PacketDefs.JsonParams()));
 
-							if (!GameSimulation.instance.ArePeopleInGame())
-							{
-								// No one is in-game so clear data
-								GameSimulation.instance.ScheduleClearGameData();
-								return;
-							}
-						}
-					}
-				}
-				else if (colTest.TypeId() == GameObjectType.GoldSkull)
-				{
-					if (this.Bounds().Intersects(colTest.Bounds()) && colTest.Active)
-					{
-						colTest.Active = false;
+                            if (!GameSimulation.instance.ArePeopleInGame())
+                            {
+                                // No one is in-game so clear data
+                                GameSimulation.instance.ScheduleClearGameData();
+                                return;
+                            }
+                        }
+                    }
+                }
+                else if (colTest.TypeId() == GameObjectType.GoldSkull)
+                {
+                    if (this.Bounds().Intersects(colTest.Bounds()) && colTest.Active)
+                    {
+                        colTest.Active = false;
 
-						// Send out a packet here informing them it's deactivated (rather than using standward way and doing it every frame)
-						PacketDefs.PlayerInputUpdatePacket updatePacket = new PacketDefs.PlayerInputUpdatePacket(
-							colTest.UnqId(), colTest.Position.X, colTest.Position.Y, colTest.FrameX(), colTest.FrameY(), colTest.Active);
-						ServerManager.instance.SendAllUdp(fastJSON.JSON.ToJSON(
-							updatePacket, PacketDefs.JsonParams()));
+                        // Send out a packet here informing them it's deactivated (rather than using standward way and doing it every frame)
+                        PacketDefs.PlayerInputUpdatePacket updatePacket = new PacketDefs.PlayerInputUpdatePacket(
+                            colTest.UnqId(), colTest.Position.X, colTest.Position.Y, colTest.FrameX(), colTest.FrameY(), colTest.Active);
+                        ServerManager.instance.SendAllUdp(fastJSON.JSON.ToJSON(
+                            updatePacket, PacketDefs.JsonParams()));
 
-						// Add exp for collecting skull
-						GameClient client = ServerManager.instance.GetClient(m_ClientId);
-						if (client != null)
-						{
+                        // Add exp for collecting skull
+                        GameClient client = ServerManager.instance.GetClient(m_ClientId);
+                        if (client != null)
+                        {
                             client.localExpCache += 10;
-							
-							// Send TCP pack with new exp update, note* only hit the database to increment exp when the level is finished
-							PacketDefs.UpdateExpPacket flp = new PacketDefs.UpdateExpPacket(client.localExpCache, PacketDefs.ID.OUT_TCP_ExpQueery);
-							ServerManager.instance.SendTcp(client.tcpSocket, fastJSON.JSON.ToJSON(flp, PacketDefs.JsonParams()));
-						}
-					}
-				}
+
+                            // Send TCP pack with new exp update, note* only hit the database to increment exp when the level is finished
+                            PacketDefs.UpdateExpPacket flp = new PacketDefs.UpdateExpPacket(client.localExpCache, PacketDefs.ID.OUT_TCP_ExpQueery);
+                            ServerManager.instance.SendTcp(client.tcpSocket, fastJSON.JSON.ToJSON(flp, PacketDefs.JsonParams()));
+                        }
+                    }
+                }
+                else if (IsHazard(colTest.TypeId()))
+                {
+                    if (!m_Hurt)
+                    {
+                        if (this.Bounds().Intersects(colTest.Bounds()) && colTest.Active)
+                        {
+                            if (Math.Abs(Velocity.X) >= 1.0f)
+                            {
+                                Velocity = new Vector2(-(float)m_Facing * 20, -30);
+                            }
+                            else
+                            {
+                                Velocity.Y = -40.0f;
+                            }
+                            
+                            m_Hurt = true;
+                            Grounded = true;
+                            m_Health -= 1;
+
+                            // Send UDP pack with new health
+                            PacketDefs.PlayerHealthPacket hp = new PacketDefs.PlayerHealthPacket(m_Health);
+                            ServerManager.instance.SendUdp(m_ClientId, fastJSON.JSON.ToJSON(hp, PacketDefs.JsonParams()));
+                        }
+                    }
+                }
             }
         }
 
@@ -288,10 +292,9 @@ namespace Server.GameSpecific.GameObjects
 
 					if (frameX > m_NumFramesX)
 					{
-						// Dead
-						frameX = 7;
-						//EventSys::SendEvent(EventSys::EventID::PlayerDead, nullptr);
-					}
+                        // Dead
+                        this.Dead();
+                    }
 
 					m_AnimTick = m_MillisPerFrame;
 				}
@@ -369,6 +372,26 @@ namespace Server.GameSpecific.GameObjects
                 points[6] = new Point(88, 58);
                 points[7] = new Point(88, 108);
             }
+        }
+
+        private void Dead()
+        {
+            frameX = 7;
+            Position = Player.SpawnPosition();
+            Velocity = Vector2.Zero;
+            m_Health = MAX_HEALTH;
+            m_Hurt = false;
+            m_Dying = false;
+            m_HurtCounter = 0.0f;
+
+            // Send UDP pack with new health
+            PacketDefs.PlayerHealthPacket hp = new PacketDefs.PlayerHealthPacket(m_Health);
+            ServerManager.instance.SendUdp(m_ClientId, fastJSON.JSON.ToJSON(hp, PacketDefs.JsonParams()));
+        }
+
+        private bool IsHazard(GameObjectType t)
+        {
+            return (t == GameObjectType.EnemyBlueMinion || t == GameObjectType.EnemyShadow || t == GameObjectType.EnemyDisciple || t == GameObjectType.Spike);
         }
     }
 }

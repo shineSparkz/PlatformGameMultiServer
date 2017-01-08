@@ -21,6 +21,7 @@ namespace Server.GameSpecific
 			// UDP out
 			OUT_UDP_UpdatedObject,
             OUT_UDP_ViewUpdate,
+            OUT_UPD_PlayerHealth,
 
 			// TCP in
             IN_TCP_CreateAccount,
@@ -29,7 +30,7 @@ namespace Server.GameSpecific
 			IN_TCP_ExpQueery,
             IN_TCP_LeaderboardRequest,
 
-            // UDP oin
+            // UDP in
             IN_UDP_Input,
 		}	
 
@@ -70,7 +71,8 @@ namespace Server.GameSpecific
         }
 
         #region Packets
-		// ---- These are only relating to OUT packets ----
+        // ---- These are only relating to OUT packets, Makes a seriaalizable object that can be used to send out as json packets with an id ----
+
         [Serializable()]
 		public class basepacket
 		{
@@ -172,6 +174,17 @@ namespace Server.GameSpecific
             {
                 this.name = (int)ID.OUT_TCP_LeaderboardRequest;
                 this.data = data;
+            }
+        }
+
+        [Serializable()]
+        public class PlayerHealthPacket : basepacket
+        {
+            public int health;
+            public PlayerHealthPacket(int data)
+            {
+                this.name = (int)ID.OUT_UPD_PlayerHealth;
+                this.health = data;
             }
         }
 

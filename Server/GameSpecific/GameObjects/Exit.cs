@@ -13,7 +13,7 @@ namespace Server.GameSpecific.GameObjects
         const float DT = 1 / 50.0f;
         const float MILLIS_PER_FRAME = 0.08f;
         const float NUM_FRAMES_X = 6;
-        const float NUM_FRAMES_Y = 5;//
+        const float NUM_FRAMES_Y = 5;
         private float m_AnimTick = MILLIS_PER_FRAME;
 
         public Exit(Vector2 p, GameObjectType obj_id, int unq_id, int isClient, bool updatable, Vector2 frameSize, ColliderOffset coloffset) :

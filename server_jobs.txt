@@ -5,11 +5,7 @@ JOBS
 
 Sunday
 ----
-- Player health and death conditions
-- Enemy Health
 - Security layer	**
-- QuadTree server
-- Client needs to only render whats in his view too
 
 Monday
 ----
@@ -29,3 +25,4 @@ DONE
 - Add spike hazards
 - Make map
 - Level Loading(map parsing, both client and server
+- Player health and death conditions

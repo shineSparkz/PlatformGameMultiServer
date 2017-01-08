@@ -19,7 +19,7 @@ namespace Server.Server
 
 		// Game specific
 		public bool loggedIn = false;
-        public bool inGame = false;     // TODO ** reset this when we handle finishing levels or returning to lobby
+        public bool inGame = false;
 		public int playerObjectHandle = -1;
 		public string userName = "";
         public int localExpCache = 0;   // Minimise database hits

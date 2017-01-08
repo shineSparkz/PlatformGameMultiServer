@@ -23,7 +23,6 @@ namespace Server.GameSpecific.GameObjects
 			{
 				foreach (GameObject go in GameSimulation.instance.GetObjects())
 				{
-					// TODO : Add other types that need collision checks
 					if ( WantToCollideWith(go.TypeId()))
 					{
 						m_CollisionObjects.Add(go);

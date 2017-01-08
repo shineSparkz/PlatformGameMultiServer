@@ -1,45 +1,15 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
-
 using System.Net;     
 using System.Net.Sockets;
 using System.Threading;
 
-using System.Data;
-
-using Microsoft.Xna.Framework;
-
-// This
 using Server.Server;
 using Server.GameSpecific;
 
-using System.Data.SQLite;
-using System.IO;
-
 namespace Server
 {
-	/*
-        TODO
-        - The idea of server knowing which level to load
-        - SQL data
-        - Store clients in database
-        - Security
-        
-        - Persisitance, say for exp or something
-        - Update game state on server (like physics)
-
-        DONE
-        - JSON proto
-		- Sort all static stuff
-        - Separate starting a game and connecting
-
-        
-    */
-
-	class Program
+    class Program
 	{
         public static void broadCast_t()
 		{

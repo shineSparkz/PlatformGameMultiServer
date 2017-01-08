@@ -40,8 +40,6 @@ namespace Server.GameSpecific.GameObjects
 
         public override void Update()
         {
-            //if (m_EnemyParent->IsDead())
-            //    return;
             if (m_Players.Count == 0 || m_Players.Count < Server.ServerManager.instance.NumClients())
             {
                 m_Players = GameSimulation.instance.GetPlayers();

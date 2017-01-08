@@ -12,3 +12,4 @@ C:\DocumentsC\university\year3\multi\DemonGame\PlatformGameMultiServer\Server\bi
 C:\DocumentsC\university\year3\multi\DemonGame\PlatformGameMultiServer\Server\bin\x64\Debug\fastJSON.dll
 C:\DocumentsC\university\year3\multi\DemonGame\PlatformGameMultiServer\Server\bin\x64\Debug\fastJSON.pdb
 C:\DocumentsC\university\year3\multi\DemonGame\PlatformGameMultiServer\Server\obj\x64\Debug\Server.csprojResolveAssemblyReference.cache
+C:\DocumentsC\university\year3\multi\DemonGame\PlatformGameMultiServer\Server\bin\x64\Debug\System.Data.SQLite.dll

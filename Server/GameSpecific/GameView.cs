@@ -22,6 +22,7 @@ namespace Server.GameSpecific
 
         public void UpdateView(Vector2 pos, float dt, int clientId)
         {
+            // Updated by the player that owns it and sent to client
             Vector2 prev = ViewPosition;
             ViewPosition = Vector2.Lerp(prev, pos, dt);
 
@@ -46,7 +47,7 @@ namespace Server.GameSpecific
                 ViewPosition.Y = GameSimulation.instance.MapHeight() - halfViewY;
             }
 
-            // TODO: Send packet of this calculated view centre
+            // Send packet of this calculated view centre
             PacketDefs.ViewUpdatePacket vp = new PacketDefs.ViewUpdatePacket(ViewPosition.X, ViewPosition.Y);
             ServerManager.instance.SendUdp(clientId, fastJSON.JSON.ToJSON(vp, PacketDefs.JsonParams()));
         }
