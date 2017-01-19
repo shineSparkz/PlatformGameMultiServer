@@ -252,14 +252,14 @@ namespace Server.GameSpecific.GameObjects
                     {
                         if (this.Bounds().Intersects(colTest.Bounds()) && colTest.Active)
                         {
-                            if (Math.Abs(Velocity.X) >= 1.0f)
-                            {
-                                Velocity = new Vector2(-(float)m_Facing * 20, -30);
-                            }
-                            else
-                            {
-                                Velocity.Y = -40.0f;
-                            }
+                            //if (Math.Abs(Velocity.X) >= 1.0f)
+                            //{
+                                Velocity = new Vector2(-(float)m_Facing * 10, -20);
+                            //}
+                            //else
+                            //{
+                              //  Velocity.Y = -30.0f;
+                            //}
                             
                             m_Hurt = true;
                             Grounded = true;
