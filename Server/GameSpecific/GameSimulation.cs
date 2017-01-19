@@ -177,7 +177,7 @@ namespace Server.GameSpecific
 							GameObject bullet = m_GameObjects[i];
 							bullet.Active = true;
 							bullet.m_Facing = player.m_Facing;
-							bullet.Position = player.Position + new Vector2(64, 64);
+                            bullet.Position = player.Position + new Vector2(32, 32);// (64, 64);
 							bullet.Velocity.X = 20 * (float)bullet.m_Facing;
                             bullet.InvokedBy = clientId;
 							break;

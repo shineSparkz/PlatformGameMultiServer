@@ -292,7 +292,10 @@ namespace Server.Server
 					m_ServerManager.SetPlayerHandle(clientId, m_GameSimulation.NumObjects());
 
                     // Add new client to game sim
-                    GameObject newPlayer = new Player(Player.SpawnPosition(), GameObjectType.Player, m_GameSimulation.NumObjects(), 1, true, clientId, new Vector2(128, 128), new ColliderOffset(46,46,50,0));
+                        
+                    GameObject newPlayer = new Player(Player.SpawnPosition(), GameObjectType.Player, m_GameSimulation.NumObjects(), 1, true, clientId,
+                        new Vector2(96, 96), new ColliderOffset(26, 26, 30, 0));  
+                        //new Vector2(128, 128), new ColliderOffset(46,46,50,0));
                     m_GameSimulation.AddGameObject(newPlayer);
 
 					// Create Packet of one game object (this player) to send to other clients already on server with just this player. *note* last param (isClient) is set to 0 intentionally

@@ -5,8 +5,8 @@ JOBS
 
 Sunday
 ----
-- Security layer	**
 
+- Security layer	**
 Monday
 ----
 - Mac port			**

@@ -278,13 +278,16 @@ namespace Server.GameSpecific.GameObjects
 		{
 			if (m_Dying)
 			{
-				m_MillisPerFrame = 0.09f;
-				m_NumFramesX = 7;
+                //m_MillisPerFrame = 0.09f;
+                m_MillisPerFrame = 1.09f;
 
-				if (m_Facing == Facing.Left)
-					frameY = 9;
-				else
-					frameY = 4;
+                //m_NumFramesX = 7;
+                m_NumFramesX = 2;
+
+                if (m_Facing == Facing.Left)
+                    frameY = 4;// 9;
+                else
+                    frameY = 5;// 4;
 
 				if (m_AnimTick <= 0.0f)
 				{
@@ -305,39 +308,39 @@ namespace Server.GameSpecific.GameObjects
 
 				if (Grounded)
 				{
-					newXFrameOnCompleteRow = 2;
+                    newXFrameOnCompleteRow = 0;// 2;
 
 					if (Math.Abs(Velocity.X) > 0.1f)
 					{
-						m_NumFramesX = 10;
+                        m_NumFramesX = 3;//10;
 
-						if (m_Facing == Facing.Left)
-							frameY = 5;
-						else
-							frameY = 0;
+                        if (m_Facing == Facing.Left)
+                            frameY = 0;// 5;
+                        else
+                            frameY = 1;// 0;
 					}
 					else //Not Moving
 					{
 						m_NumFramesX = 0;
 
-						if (m_Facing == Facing.Left)
-							frameY = 5;
-						else
-							frameY = 0;
+                        if (m_Facing == Facing.Left)
+                            frameY = 0;// 5;
+                        else
+                            frameY = 1;// 0;
 					}
 				}
 				else
 				{
-					m_NumFramesX = 7;
-					newXFrameOnCompleteRow = 7;
+                    m_NumFramesX = 1;// 7;
+                    newXFrameOnCompleteRow = 0;// 7;
 
 					if (m_Facing == Facing.Left)
 					{
-						frameY = 6;
+                        frameY = 2;// 6;
 					}
 					else
 					{
-						frameY = 1;
+                        frameY = 3;// 1;
 					}
 				}
 
@@ -360,6 +363,7 @@ namespace Server.GameSpecific.GameObjects
             {
                 points = new Point[8];
 
+                /*
                 points[0] = new Point(48, 38);
                 points[1] = new Point(80, 38);
 
@@ -371,12 +375,33 @@ namespace Server.GameSpecific.GameObjects
 
                 points[6] = new Point(88, 58);
                 points[7] = new Point(88, 108);
+                */
+
+                // TL
+                points[0] = new Point(38, 28);
+
+                // TR
+                points[1] = new Point(65, 28);
+
+                // BL
+                points[2] = new Point(38, 96);
+
+                // BR
+                points[3] = new Point(65, 96);
+
+                
+                points[4] = new Point(30, 38);
+                points[5] = new Point(30, 86);
+
+                points[6] = new Point(72, 38);
+                points[7] = new Point(72, 86);
             }
         }
 
         private void Dead()
         {
-            frameX = 7;
+            m_MillisPerFrame = 0.07f;
+            frameX = 0;// 7;
             Position = Player.SpawnPosition();
             Velocity = Vector2.Zero;
             m_Health = MAX_HEALTH;
